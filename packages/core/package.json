@@ -1,0 +1,54 @@
+{
+  "name": "@grok-cli/core",
+  "description": "Grok CLI Core - Universal LLM CLI Core",
+  "repository": "stevederico/grok-cli",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/src/index.js",
+    "build": "node ../../scripts/build_package.js",
+    "clean": "rm -rf dist",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "provider-tests": "vitest run src/providers/providers.test.ts",
+    "typecheck": "tsc --noEmit",
+    "prerelease:version": "node ../../scripts/bind_package_version.js",
+    "prerelease:deps": "node ../../scripts/bind_package_dependencies.js",
+    "prepack": "npm run build",
+    "prepublishOnly": "node ../../scripts/prepublish.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "@types/glob": "^8.1.0",
+    "@types/html-to-text": "^9.0.4",
+    "diff": "^7.0.0",
+    "dotenv": "^16.4.7",
+    "glob": "^10.4.5",
+    "html-to-text": "^9.0.5",
+    "ignore": "^7.0.0",
+    "micromatch": "^4.0.8",
+    "open": "^10.1.2",
+    "shell-quote": "^1.8.2",
+    "simple-git": "^3.28.0",
+    "strip-ansi": "^7.1.0",
+    "undici": "^7.10.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/diff": "^7.0.2",
+    "@types/dotenv": "^6.1.1",
+    "@types/micromatch": "^4.0.8",
+    "@types/minimatch": "^5.1.2",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.3.3",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

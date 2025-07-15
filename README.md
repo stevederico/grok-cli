@@ -1,4 +1,3 @@
-I AM GROK
 # @stevederico/grok-cli
 
 <img width="1034" alt="Screenshot 2025-06-28 at 2 29 22 PM" src="https://github.com/user-attachments/assets/c7bf330e-f4c8-45ba-afe4-7534adf74d82" />

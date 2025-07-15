@@ -149,6 +149,10 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 For details on the terms of service and privacy notice applicable to your use of Grok CLI, see the [Terms of Service and Privacy Notice](./docs/tos-privacy.md).
 
+## Disclaimer
+
+This project is not an official product or initiative of xAI or Grok. It is an independent endeavor and is not endorsed, sponsored, or affiliated with xAI or Grok in any way.
+
 ## Acknowledgments
 
 This project is based on and inspired by the excellent work from [Google's Gemini CLI](https://github.com/google-gemini/gemini-cli). We acknowledge and appreciate their foundational contributions to the open-source AI tooling ecosystem.

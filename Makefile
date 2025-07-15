@@ -1,9 +1,9 @@
-# Makefile for OpenCLI
+# Makefile for Grok-CLI
 
 .PHONY: help install build test lint format preflight clean start debug release run-npx create-alias
 
 help:
-	@echo "Makefile for OpenCLI"
+	@echo "Makefile for Grok-CLI"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make install          - Install npm dependencies"
@@ -17,7 +17,7 @@ help:
 	@echo "  make debug            - Start the CLI in debug mode"
 	@echo "  make release          - Publish a new release"
 	@echo "  make run-npx          - Run the CLI using npx (for testing the published package)"
-	@echo "  make create-alias     - Create a 'gemini' alias for your shell"
+	@echo "  make create-alias     - Create a 'grokcli' alias for your shell"
 
 install:
 	npm install
@@ -50,7 +50,7 @@ release:
 	npm run publish:release
 
 run-npx:
-	npx https://github.com/google-gemini/gemini-cli
+	npx https://github.com/stevederico/grok-cli
 
 create-alias:
 	scripts/create_alias.sh

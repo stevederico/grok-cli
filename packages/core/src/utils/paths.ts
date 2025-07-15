@@ -8,7 +8,7 @@ import path from 'node:path';
 import os from 'os';
 import * as crypto from 'crypto';
 
-export const GEMINI_DIR = '.opencli';
+export const GEMINI_DIR = '.grokcli';
 const TMP_DIR_NAME = 'tmp';
 
 /**

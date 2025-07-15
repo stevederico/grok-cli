@@ -40,7 +40,7 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
     {/* Render standard message types */}
     {item.type === 'user' && <UserMessage text={item.text} />}
     {item.type === 'user_shell' && <UserShellMessage text={item.text} />}
-    {item.type === 'gemini' && (
+    {item.type === 'ai' && (
       <LLMMessage
         text={item.text}
         isPending={isPending}
@@ -48,7 +48,7 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
         terminalWidth={terminalWidth}
       />
     )}
-    {item.type === 'gemini_content' && (
+    {item.type === 'ai_content' && (
       <LLMMessageContent
         text={item.text}
         isPending={isPending}
@@ -73,7 +73,7 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
         sandboxEnv={item.sandboxEnv}
         modelVersion={item.modelVersion}
         selectedAuthType={item.selectedAuthType}
-        gcpProject={item.gcpProject}
+        cloudProject={item.cloudProject}
       />
     )}
     {item.type === 'stats' && (

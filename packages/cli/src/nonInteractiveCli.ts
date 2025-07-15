@@ -32,14 +32,16 @@ export async function runNonInteractive(
     const toolRegistry = await config.getToolRegistry();
     
     // Use the provider system with tool-enabled query
-    const providerName = config.getProvider() || 'ollama';
+    const providerName = config.getProvider() || 
+      process.env.GROKCLI_PROVIDER || 
+      (process.env.XAI_API_KEY ? 'grok' : 'ollama');
     const model = config.getModel();
     
     // Build provider config from the main config
     const providerConfig: any = {};
     
     // Map config properties to provider config based on provider type
-    if (providerName === 'grok') {
+    if (providerName === 'xai') {
       providerConfig.apiKey = process.env.XAI_API_KEY || '';
     } else if (providerName === 'ollama') {
       providerConfig.endpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';

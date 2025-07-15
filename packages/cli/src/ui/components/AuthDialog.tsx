@@ -95,12 +95,12 @@ export function AuthDialog({
         <Text color={Colors.Gray}>(Use Enter to select)</Text>
       </Box>
       <Box marginTop={1}>
-        <Text>Terms of Services and Privacy Notice for OpenCLI</Text>
+        <Text>Terms of Services and Privacy Notice for Grok CLI</Text>
       </Box>
       <Box marginTop={1}>
         <Text color={Colors.AccentBlue}>
           {
-            'https://github.com/google-gemini/opencli/blob/main/docs/tos-privacy.md'
+            'https://github.com/stevederico/grok-cli/blob/main/docs/tos-privacy.md'
           }
         </Text>
       </Box>

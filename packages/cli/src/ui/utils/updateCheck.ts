@@ -25,7 +25,7 @@ export async function checkForUpdates(): Promise<string | null> {
     });
 
     if (notifier.update) {
-      return `OpenCLI update available! ${notifier.update.current} → ${notifier.update.latest}\nRun npm install -g ${packageJson.name} to update`;
+      return `Grok CLI update available! ${notifier.update.current} → ${notifier.update.latest}\nRun npm install -g @stevederico/grok-cli to update`;
     }
 
     return null;

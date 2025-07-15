@@ -16,7 +16,7 @@ interface AboutBoxProps {
   sandboxEnv: string;
   modelVersion: string;
   selectedAuthType: string;
-  gcpProject: string;
+  cloudProject: string;
   buildNumber?: string;
 }
 
@@ -26,7 +26,7 @@ export const AboutBox: React.FC<AboutBoxProps> = ({
   sandboxEnv,
   modelVersion,
   selectedAuthType,
-  gcpProject,
+  cloudProject,
   buildNumber = BUILD_NUMBER,
 }) => (
   <Box
@@ -118,15 +118,15 @@ export const AboutBox: React.FC<AboutBoxProps> = ({
         <Text>{osVersion}</Text>
       </Box>
     </Box>
-    {gcpProject && (
+    {cloudProject && (
       <Box flexDirection="row">
         <Box width="35%">
           <Text bold color={Colors.LightBlue}>
-            GCP Project
+            Cloud Project
           </Text>
         </Box>
         <Box>
-          <Text>{gcpProject}</Text>
+          <Text>{cloudProject}</Text>
         </Box>
       </Box>
     )}

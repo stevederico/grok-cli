@@ -1,7 +1,14 @@
 /**
  * @license
- * Copyright 2025 @stevederico/grok-cli Contributors
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 @stevederico/grok-cli Contribu       `grokcli-modify-${fileName}-old-${timestamp}`,
+  );
+  const newFilePath = path.join(
+    diffDir,
+    `grokcli-modify-${fileName}-new-${timestamp}`,kcli-modify-${fileName}-old-${timestamp}`,
+  );
+  const newFilePath = path.join(
+    diffDir,
+    `grokcli-modify-${fileName}-new-${timestamp}`, * SPDX-License-Identifier: Apache-2.0
  */
 
 import { EditorType } from '../utils/editor.js';
@@ -52,7 +59,7 @@ function createTempFilesForModify(
   file_path: string,
 ): { oldPath: string; newPath: string } {
   const tempDir = os.tmpdir();
-  const diffDir = path.join(tempDir, 'opencli-tool-modify-diffs');
+  const diffDir = path.join(tempDir, 'grokcli-tool-modify-diffs');
 
   if (!fs.existsSync(diffDir)) {
     fs.mkdirSync(diffDir, { recursive: true });

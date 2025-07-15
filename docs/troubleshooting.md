@@ -19,7 +19,7 @@ This guide provides solutions to common issues and debugging tips.
 
 - **Q: How do I update Grok CLI to the latest version?**
 
-  - A: If installed globally via npm, update Grok CLI using the command `npm install -g grok-cli@latest`. If run from source, pull the latest changes from the repository and rebuild using `npm run build`.
+  - A: If installed globally via npm, update Grok CLI using the command `npm install -g @stevederico/grok-cli@latest`. If run from source, pull the latest changes from the repository and rebuild using `npm run build`.
 
 - **Q: Where are Grok CLI configuration files stored?**
 

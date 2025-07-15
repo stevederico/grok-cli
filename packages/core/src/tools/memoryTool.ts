@@ -47,42 +47,47 @@ Do NOT use this tool:
 
 export const GROKCLI_CONFIG_DIR = '.grok-cli';
 export const DEFAULT_CONTEXT_FILENAME = 'GROKCLI.md';
-export const MEMORY_SECTION_HEADER = '## Gemini Added Memories';
+export const MEMORY_SECTION_HEADER = '## AI Added Memories';
 
 // This variable will hold the currently configured filename for GROKCLI.md context files.
-// It defaults to DEFAULT_CONTEXT_FILENAME but can be overridden by setGeminiMdFilename.
-let currentGeminiMdFilename: string | string[] = DEFAULT_CONTEXT_FILENAME;
+// It defaults to DEFAULT_CONTEXT_FILENAME but can be overridden by setContextMdFilename.
+let currentContextMdFilename: string | string[] = DEFAULT_CONTEXT_FILENAME;
 
-export function setGeminiMdFilename(newFilename: string | string[]): void {
+export function setContextMdFilename(newFilename: string | string[]): void {
   if (Array.isArray(newFilename)) {
     if (newFilename.length > 0) {
-      currentGeminiMdFilename = newFilename.map((name) => name.trim());
+      currentContextMdFilename = newFilename.map((name) => name.trim());
     }
   } else if (newFilename && newFilename.trim() !== '') {
-    currentGeminiMdFilename = newFilename.trim();
+    currentContextMdFilename = newFilename.trim();
   }
 }
 
-export function getCurrentGeminiMdFilename(): string {
-  if (Array.isArray(currentGeminiMdFilename)) {
-    return currentGeminiMdFilename[0];
+export function getCurrentContextMdFilename(): string {
+  if (Array.isArray(currentContextMdFilename)) {
+    return currentContextMdFilename[0];
   }
-  return currentGeminiMdFilename;
+  return currentContextMdFilename;
 }
 
-export function getAllGeminiMdFilenames(): string[] {
-  if (Array.isArray(currentGeminiMdFilename)) {
-    return currentGeminiMdFilename;
+export function getAllContextMdFilenames(): string[] {
+  if (Array.isArray(currentContextMdFilename)) {
+    return currentContextMdFilename;
   }
-  return [currentGeminiMdFilename];
+  return [currentContextMdFilename];
 }
+
+// Legacy function names for backward compatibility
+export const setGeminiMdFilename = setContextMdFilename;
+export const getCurrentGeminiMdFilename = getCurrentContextMdFilename;
+export const getAllGeminiMdFilenames = getAllContextMdFilenames;
 
 interface SaveMemoryParams {
   fact: string;
 }
 
 function getGlobalMemoryFilePath(): string {
-  return path.join(homedir(), GROKCLI_CONFIG_DIR, getCurrentGeminiMdFilename());
+  return path.join(homedir(), GROKCLI_CONFIG_DIR, getCurrentContextMdFilename());
 }
 
 /**

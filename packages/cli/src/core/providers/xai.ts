@@ -1,4 +1,57 @@
 import { Provider, ProviderConfig, QueryOptions, ToolCallResponse, ProviderToolCall } from './index.js';
+import { tokenLimit } from '../core/tokenLimits.js';
+
+// Simple token estimation (approximate)
+function estimateTokens(text: string): number {
+  // Rough estimate: 1 token ≈ 4 characters
+  return Math.ceil(text.length / 4);
+}
+
+function truncateToTokenLimit(messages: any[], model: string, maxTokens: number): any[] {
+  const customLimit = parseInt(process.env.GROKCLI_CONTEXT_SIZE || '128000', 10);
+  const limit = customLimit || tokenLimit(model);
+  const systemMessageTokens = 1000; // Reserve tokens for system message
+  const responseTokens = maxTokens || 2048; // Reserve tokens for response
+  const availableTokens = limit - systemMessageTokens - responseTokens;
+  
+  if (availableTokens <= 0) {
+    console.warn(`⚠️ XAI - Token limit too low for model ${model}`);
+    return messages;
+  }
+  
+  let totalTokens = 0;
+  const truncatedMessages = [];
+  
+  // Keep messages in reverse order (newest first) until we hit token limit
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    const msgContent = msg.content || '';
+    const msgTokens = estimateTokens(msgContent);
+    
+    if (totalTokens + msgTokens > availableTokens) {
+      // If this would exceed limit, truncate the content
+      const remainingTokens = availableTokens - totalTokens;
+      if (remainingTokens > 100) { // Only truncate if we have decent space left
+        const maxChars = remainingTokens * 4;
+        const truncatedContent = msgContent.substring(0, maxChars) + '... [truncated due to token limit]';
+        truncatedMessages.unshift({
+          ...msg,
+          content: truncatedContent
+        });
+      }
+      break;
+    }
+    
+    totalTokens += msgTokens;
+    truncatedMessages.unshift(msg);
+  }
+  
+  if (truncatedMessages.length < messages.length) {
+    console.log(`🔧 XAI - Truncated ${messages.length - truncatedMessages.length} messages due to token limit (${totalTokens}/${availableTokens} tokens)`);
+  }
+  
+  return truncatedMessages;
+}
 
 export class XAIProvider extends Provider {
   private apiKey: string | undefined;
@@ -138,6 +191,9 @@ Available tools help you:
         });
         messages.push({ role: 'user', content: prompt });
       }
+      
+      // Apply token limiting
+      messages = truncateToTokenLimit(messages, model, options.maxTokens || 2048);
 
       const requestBody: any = {
         model,

@@ -22,7 +22,6 @@ import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
-import { WebSearchTool } from '../tools/web-search.js';
 import { GeminiClient } from '../core/types.js';
 import { GROKCLI_CONFIG_DIR as GROKCLI_DIR } from '../tools/memoryTool.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
@@ -468,7 +467,6 @@ export function createToolRegistry(config: Config): Promise<ToolRegistry> {
   registerCoreTool(ReadManyFilesTool, targetDir, config);
   registerCoreTool(ShellTool, config);
   registerCoreTool(MemoryTool);
-  registerCoreTool(WebSearchTool, config);
   return (async () => {
     await registry.discoverTools();
     return registry;

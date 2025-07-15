@@ -1,9 +1,10 @@
-
+I AM GROK
+# @stevederico/grok-cli
 
 <img width="1034" alt="Screenshot 2025-06-28 at 2 29 22 PM" src="https://github.com/user-attachments/assets/c7bf330e-f4c8-45ba-afe4-7534adf74d82" />
 
-# @stevederico/grok-cli
-grok cli is an open-source interactive CLI tool with built-in support for grok and ollama, it provides a flexible and powerful interface for AI-assisted workflows.
+
+Grok CLI is an open-source interactive CLI tool that provides a flexible and powerful interface for AI-assisted workflows.
 
 ## Key Benefits
 
@@ -11,6 +12,7 @@ grok cli is an open-source interactive CLI tool with built-in support for grok a
 - **Built-in Provider Support**: 
   - Grok (xAI)
   - Ollama
+  - Easily extendable to other providers
 
 ## Environment Variables
 
@@ -19,7 +21,7 @@ grok cli is an open-source interactive CLI tool with built-in support for grok a
 | Provider | Environment Variable | Description | Example |
 |----------|---------------------|-------------|---------|
 | Grok (xAI) | `XAI_API_KEY` | API key for Grok AI | `export XAI_API_KEY="your_grok_api_key"` |
-| Grok (xAI) | `XAI_MODEL` | Specific Grok model to use | `export XAI_MODEL="grok-3-mini"` |
+| Grok (xAI) | `XAI_MODEL` | Specific Grok model to use | `export XAI_MODEL="grok-4-0709"` |
 | Ollama | `OLLAMA_HOST` | Ollama server endpoint | `export OLLAMA_HOST="http://localhost:11434"` |
 
 ### General Configuration
@@ -139,10 +141,6 @@ Use MCP servers to integrate your local system tools with your enterprise collab
 ```text
 > Organise my PDF invoices by month of expenditure.
 ```
-
-# Disclaimer
-
-This project is an unofficial implementation of the Grok CLI and is not affiliated with or endorsed by XAI. It is independently developed and maintained by the contributors of this repository. Any references to Grok CLI or related technologies are for descriptive purposes only and do not imply any association with XAI or its official products.
 
 ## License
 

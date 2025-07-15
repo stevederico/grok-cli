@@ -355,7 +355,7 @@ export async function start_sandbox(
     const remedy =
       image === LOCAL_DEV_SANDBOX_IMAGE_NAME
         ? 'Try running `npm run build:all` or `npm run build:sandbox` under the grok-cli repo to build it locally, or check the image name and your network connection.'
-        : 'Please check the image name, your network connection, or notify grok-cli-dev@example.com if the issue persists.';
+        : 'Please check the image name, your network connection, or open an issue on GitHub if the problem persists.';
     console.error(
       `ERROR: Sandbox image '${image}' is missing or could not be pulled. ${remedy}`,
     );

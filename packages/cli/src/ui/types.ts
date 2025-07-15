@@ -18,7 +18,7 @@ export enum StreamingState {
 }
 
 // Copied from server/src/core/turn.ts for CLI usage
-export enum GeminiEventType {
+export enum MessageEventType {
   Content = 'content',
   ToolCallRequest = 'tool_call_request',
   // Add other event types if the UI hook needs to handle them
@@ -55,7 +55,7 @@ export interface IndividualToolCallDisplay {
 
 
 export interface HistoryItemBase {
-  text?: string; // Text content for user/gemini/info/error messages
+  text?: string; // Text content for user/ai/info/error messages
 }
 
 export type HistoryItemUser = HistoryItemBase & {
@@ -63,8 +63,8 @@ export type HistoryItemUser = HistoryItemBase & {
   text: string;
 };
 
-export type HistoryItemGemini = HistoryItemBase & {
-  type: 'gemini';
+export type HistoryItemAI = HistoryItemBase & {
+  type: 'ai';
   text: string;
 };
 
@@ -73,8 +73,8 @@ export type HistoryItemAssistant = HistoryItemBase & {
   text: string;
 };
 
-export type HistoryItemGeminiContent = HistoryItemBase & {
-  type: 'gemini_content';
+export type HistoryItemAIContent = HistoryItemBase & {
+  type: 'ai_content';
   text: string;
 };
 
@@ -95,7 +95,7 @@ export type HistoryItemAbout = HistoryItemBase & {
   sandboxEnv: string;
   modelVersion: string;
   selectedAuthType: string;
-  gcpProject: string;
+  cloudProject: string;
 };
 
 export type HistoryItemStats = HistoryItemBase & {
@@ -128,9 +128,9 @@ export type HistoryItemUserShell = HistoryItemBase & {
 export type HistoryItemWithoutId =
   | HistoryItemUser
   | HistoryItemUserShell
-  | HistoryItemGemini
+  | HistoryItemAI
   | HistoryItemAssistant
-  | HistoryItemGeminiContent
+  | HistoryItemAIContent
   | HistoryItemInfo
   | HistoryItemError
   | HistoryItemAbout
@@ -148,7 +148,7 @@ export enum MessageType {
   ABOUT = 'about',
   STATS = 'stats',
   QUIT = 'quit',
-  GEMINI = 'gemini',
+  GEMINI = 'ai',
   ASSISTANT = 'assistant',
 }
 
@@ -167,7 +167,7 @@ export type Message =
       sandboxEnv: string;
       modelVersion: string;
       selectedAuthType: string;
-      gcpProject: string;
+      cloudProject: string;
       content?: string; // Optional content, not really used for ABOUT
     }
   | {

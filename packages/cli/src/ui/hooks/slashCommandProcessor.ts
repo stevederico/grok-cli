@@ -18,6 +18,8 @@ import {
   getMCPDiscoveryState,
   getMCPServerStatus,
   getAvailableProviders,
+  validateProvider,
+  getProvider,
 } from '../../core/index.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import {
@@ -69,14 +71,14 @@ export const useSlashCommandProcessor = (
   refreshStatic: () => void,
   setShowHelp: React.Dispatch<React.SetStateAction<boolean>>,
   onDebugMessage: (message: string) => void,
-  openThemeDialog: () => void,
-  openAuthDialog: () => void,
   openEditorDialog: () => void,
   performMemoryRefresh: () => Promise<void>,
   toggleCorgiMode: () => void,
   showToolDescriptions: boolean = false,
   setQuittingMessages: (message: HistoryItem[]) => void,
   openPrivacyNotice: () => void,
+  openProviderDialog: () => void,
+  openModelDialog: () => void,
 ) => {
   const session = useSessionStats();
   const gitService = useMemo(() => {
@@ -100,7 +102,7 @@ export const useSlashCommandProcessor = (
           sandboxEnv: message.sandboxEnv,
           modelVersion: message.modelVersion,
           selectedAuthType: message.selectedAuthType,
-          gcpProject: message.gcpProject,
+          cloudProject: message.cloudProject,
         };
       } else if (message.type === MessageType.STATS) {
         historyItemContent = {
@@ -165,12 +167,12 @@ export const useSlashCommandProcessor = (
   );
 
   const savedChatTags = useCallback(async () => {
-    const geminiDir = config?.getProjectTempDir();
-    if (!geminiDir) {
+    const clientDir = config?.getProjectTempDir();
+    if (!clientDir) {
       return [];
     }
     try {
-      const files = await fs.readdir(geminiDir);
+      const files = await fs.readdir(clientDir);
       return files
         .filter(
           (file) => file.startsWith('checkpoint-') && file.endsWith('.json'),
@@ -186,7 +188,7 @@ export const useSlashCommandProcessor = (
       {
         name: 'help',
         altName: '?',
-        description: 'for help on opencli',
+        description: 'for help on grokcli',
         action: (_mainCommand, _subCommand, _args) => {
           onDebugMessage('Opening help.');
           setShowHelp(true);
@@ -194,9 +196,9 @@ export const useSlashCommandProcessor = (
       },
       {
         name: 'docs',
-        description: 'open full OpenCLI documentation in your browser',
+        description: 'open full Grok CLI documentation in your browser',
         action: async (_mainCommand, _subCommand, _args) => {
-          const docsUrl = 'https://goo.gle/opencli-docs';
+          const docsUrl = 'https://goo.gle/grokcli-docs';
           if (process.env.SANDBOX && process.env.SANDBOX !== 'sandbox-exec') {
             addMessage({
               type: MessageType.INFO,
@@ -225,13 +227,6 @@ export const useSlashCommandProcessor = (
         },
       },
       {
-        name: 'theme',
-        description: 'change the theme',
-        action: (_mainCommand, _subCommand, _args) => {
-          openThemeDialog();
-        },
-      },
-      {
         name: 'editor',
         description: 'set external editor preference',
         action: (_mainCommand, _subCommand, _args) => {
@@ -240,23 +235,23 @@ export const useSlashCommandProcessor = (
       },
       {
         name: 'privacy',
-        description: 'display OpenCLI privacy information',
+        description: 'display Grok CLI privacy information',
         action: (_mainCommand, _subCommand, _args) => {
           addMessage({
             type: MessageType.INFO,
-            content: `🔒 OpenCLI Privacy Policy
+            content: `🔒 Grok CLI Privacy Policy
 
-OpenCLI is designed with privacy in mind:
+Grok CLI is designed with privacy in mind:
 
-• **No tracking**: OpenCLI collects absolutely no data about your usage, files, or interactions.
+• **No tracking**: Grok CLI collects absolutely no data about your usage, files, or interactions.
 • **No analytics**: We don't track commands, queries, or any user behavior.
 • **Local operation**: All CLI operations happen locally on your machine.
-• **Provider communication**: OpenCLI only communicates with the AI provider you configure (like Grok, Ollama, etc.).
+• **Provider communication**: Grok CLI only communicates with the AI provider you configure (like Grok, Ollama, etc.).
 • **Your data stays yours**: Your conversations, files, and settings remain entirely under your control.
 
 **Note**: The AI providers you connect to (Grok, Ollama, etc.) may have their own data policies. Please review their respective privacy policies for information about how they handle your queries.
 
-For more information, visit: https://github.com/stevederico/opencli`,
+For more information, visit: https://github.com/stevederico/grok-cli`,
             timestamp: new Date(),
           });
         },
@@ -317,7 +312,7 @@ For more information, visit: https://github.com/stevederico/opencli`,
           const serverNames = Object.keys(mcpServers);
 
           if (serverNames.length === 0) {
-            const docsUrl = 'https://goo.gle/opencli-docs-mcp';
+            const docsUrl = 'https://goo.gle/grokcli-docs-mcp';
             if (process.env.SANDBOX && process.env.SANDBOX !== 'sandbox-exec') {
               addMessage({
                 type: MessageType.INFO,
@@ -512,7 +507,7 @@ For more information, visit: https://github.com/stevederico/opencli`,
       },
       {
         name: 'tools',
-        description: 'list available OpenCLI tools',
+        description: 'list available Grok CLI tools',
         action: async (_mainCommand, _subCommand, _args) => {
           // Check if the _subCommand includes a specific flag to control description visibility
           let useShowDescriptions = showToolDescriptions;
@@ -541,12 +536,12 @@ For more information, visit: https://github.com/stevederico/opencli`,
           }
 
           // Filter out MCP tools by checking if they have a serverName property
-          const geminiTools = tools.filter((tool) => !('serverName' in tool));
+          const coreTools = tools.filter((tool) => !('serverName' in tool));
 
-          let message = 'Available OpenCLI tools:\n\n';
+          let message = 'Available Grok CLI tools:\n\n';
 
-          if (geminiTools.length > 0) {
-            geminiTools.forEach((tool) => {
+          if (coreTools.length > 0) {
+            coreTools.forEach((tool) => {
               if (useShowDescriptions && tool.description) {
                 // Format tool name in cyan using simple ANSI cyan color
                 message += `  - \u001b[36m${tool.displayName} (${tool.name})\u001b[0m:\n`;
@@ -586,25 +581,43 @@ For more information, visit: https://github.com/stevederico/opencli`,
       },
       {
         name: 'provider',
-        description: 'manage AI providers. Usage: /provider [list|current|set <provider>]',
+        description: 'manage AI providers. Usage: /provider [list|current|set <provider>|select]',
         action: async (_mainCommand, subCommand, args) => {
           try {
             switch (subCommand) {
-              case 'list':
+              case 'select':
               case undefined: {
+                // Open interactive provider selection dialog
+                openProviderDialog();
+                return;
+              }
+              
+              case 'list': {
                 const availableProviders = getAvailableProviders();
                 const currentProvider = config?.getProvider() || process.env.GROKCLI_PROVIDER || 'ollama';
               
                 let message = '🔌 Available AI Providers:\n\n';
-                availableProviders.forEach((provider) => {
+                
+                // Check health of each provider
+                for (const provider of availableProviders) {
                   const isActive = provider === currentProvider;
                   const indicator = isActive ? '●' : '○';
                   const color = isActive ? '\u001b[32m' : '\u001b[90m'; // Green for active, gray for inactive
-                  message += `  ${color}${indicator} ${provider}${isActive ? ' (current)' : ''}\u001b[0m\n`;
-                });
+                  
+                  // Check provider health
+                  const validation = await validateProvider(provider);
+                  const healthIndicator = validation.healthy ? '✅' : '⚠️';
+                  
+                  message += `  ${color}${indicator} ${provider}${isActive ? ' (current)' : ''} ${healthIndicator}\u001b[0m\n`;
+                  
+                  // Show issues if any
+                  if (!validation.healthy) {
+                    message += `    \u001b[33m⚠️  ${validation.issues.join(', ')}\u001b[0m\n`;
+                  }
+                }
                 
                 message += '\n💡 Usage:\n';
-                message += '  • /provider list - show all providers\n';
+                message += '  • /provider list - show all providers with health status\n';
                 message += '  • /provider current - show current provider\n';
                 message += '  • /provider set <name> - switch to a provider\n';
                 message += '\n⚠️  Note: Provider changes require a CLI restart to take effect.';
@@ -652,12 +665,23 @@ For more information, visit: https://github.com/stevederico/opencli`,
                 }
                 
                 // Check if provider requires API key
-                if (providerName === 'grok') {
+                if (providerName === 'xai') {
                   const hasApiKey = !!(process.env.XAI_API_KEY);
                   if (!hasApiKey) {
                     addMessage({
                       type: MessageType.ERROR,
-                      content: `❌ Grok provider requires XAI_API_KEY environment variable.\n\n💡 Set your API key:\n  export XAI_API_KEY="your-api-key-here"\n  npm start`,
+                      content: `❌ XAI provider requires XAI_API_KEY environment variable.\n\n💡 Set your API key:\n  export XAI_API_KEY="your-api-key-here"\n  npm start`,
+                      timestamp: new Date(),
+                    });
+                    return;
+                  }
+                } else if (providerName === 'ollama') {
+                  // Validate Ollama is running
+                  const validation = await validateProvider('ollama');
+                  if (!validation.healthy) {
+                    addMessage({
+                      type: MessageType.ERROR,
+                      content: `❌ Ollama provider validation failed:\n${validation.issues.map(issue => `  • ${issue}`).join('\n')}\n\n💡 Make sure Ollama is installed and running:\n  ollama serve`,
                       timestamp: new Date(),
                     });
                     return;
@@ -667,11 +691,40 @@ For more information, visit: https://github.com/stevederico/opencli`,
                 // Switch the provider
                 config?.setProvider(providerName);
                 
-                addMessage({
-                  type: MessageType.INFO,
-                  content: `✅ Successfully switched to provider: ${providerName}`,
-                  timestamp: new Date(),
-                });
+                // Get the provider's default model and switch to it
+                try {
+                  const provider = getProvider(providerName);
+                  let defaultModel: string;
+                  
+                  if (providerName === 'xai') {
+                    defaultModel = process.env.XAI_MODEL || 'grok-4-0709';
+                  } else if (providerName === 'ollama') {
+                    defaultModel = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
+                  } else {
+                    // For other providers, try to get the first available model
+                    try {
+                      const models = await provider.getModels();
+                      defaultModel = models.length > 0 ? models[0] : 'unknown';
+                    } catch {
+                      defaultModel = 'unknown';
+                    }
+                  }
+                  
+                  // Update the model
+                  config?.setModel(defaultModel);
+                  
+                  addMessage({
+                    type: MessageType.INFO,
+                    content: `✅ Successfully switched to provider: ${providerName} (model: ${defaultModel})`,
+                    timestamp: new Date(),
+                  });
+                } catch (error) {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: `❌ Provider switched but failed to update model: ${error instanceof Error ? error.message : String(error)}`,
+                    timestamp: new Date(),
+                  });
+                }
                 return;
               }
               
@@ -694,6 +747,211 @@ For more information, visit: https://github.com/stevederico/opencli`,
         },
       },
       {
+        name: 'model',
+        description: 'manage AI models. Usage: /model [list|current|set <model>|select]',
+        action: async (_mainCommand, subCommand, args) => {
+          try {
+            const currentProvider = config?.getProvider() || process.env.GROKCLI_PROVIDER || 'ollama';
+            
+            switch (subCommand) {
+              case 'select':
+              case undefined: {
+                // Open interactive model selection dialog
+                openModelDialog();
+                return;
+              }
+              
+              case 'list': {
+                try {
+                  const provider = getProvider(currentProvider);
+                  const availableModels = await provider.getModels();
+                  const currentModel = config?.getModel() || 'Unknown';
+                  
+                  let message = `🤖 Available Models for ${currentProvider}:\n\n`;
+                  
+                  if (availableModels.length === 0) {
+                    message += '  No models available\n';
+                    if (currentProvider === 'ollama') {
+                      message += '\n💡 Install a model:\n  ollama pull llama3.2\n  ollama pull mistral\n  ollama pull codellama';
+                    }
+                  } else {
+                    availableModels.forEach((model, index) => {
+                      const isActive = model === currentModel;
+                      const indicator = isActive ? '●' : '○';
+                      const color = isActive ? '\u001b[32m' : '\u001b[90m';
+                      message += `  ${color}${indicator} ${model}${isActive ? ' (current)' : ''}\u001b[0m\n`;
+                    });
+                  }
+                  
+                  message += '\n💡 Usage:\n';
+                  message += '  • /model list - show all models\n';
+                  message += '  • /model current - show current model\n';
+                  message += '  • /model set <name> - switch to a model\n';
+                  
+                  addMessage({
+                    type: MessageType.INFO,
+                    content: message,
+                    timestamp: new Date(),
+                  });
+                } catch (error) {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: `❌ Failed to fetch models for ${currentProvider}: ${error instanceof Error ? error.message : String(error)}`,
+                    timestamp: new Date(),
+                  });
+                }
+                return;
+              }
+              
+              case 'current': {
+                const currentModel = config?.getModel() || 'Unknown';
+                addMessage({
+                  type: MessageType.INFO,
+                  content: `🤖 Current Model: ${currentModel}\n🔌 Provider: ${currentProvider}`,
+                  timestamp: new Date(),
+                });
+                return;
+              }
+              
+              case 'set': {
+                if (!args || args.trim() === '') {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: 'Usage: /model set <model_name>\nExample: /model set llama3.2:latest',
+                    timestamp: new Date(),
+                  });
+                  return;
+                }
+                
+                const modelName = args.trim();
+                
+                try {
+                  const provider = getProvider(currentProvider);
+                  const availableModels = await provider.getModels();
+                  
+                  if (!availableModels.includes(modelName)) {
+                    addMessage({
+                      type: MessageType.ERROR,
+                      content: `❌ Model '${modelName}' not found.\nAvailable models: ${availableModels.join(', ')}`,
+                      timestamp: new Date(),
+                    });
+                    return;
+                  }
+                  
+                  // Switch the model
+                  config?.setModel(modelName);
+                  
+                  addMessage({
+                    type: MessageType.INFO,
+                    content: `✅ Successfully switched to model: ${modelName}`,
+                    timestamp: new Date(),
+                  });
+                } catch (error) {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: `❌ Failed to switch model: ${error instanceof Error ? error.message : String(error)}`,
+                    timestamp: new Date(),
+                  });
+                }
+                return;
+              }
+              
+              default: {
+                addMessage({
+                  type: MessageType.ERROR,
+                  content: `Unknown /model command: ${subCommand}. Available: list, current, set`,
+                  timestamp: new Date(),
+                });
+                return;
+              }
+            }
+          } catch (error) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Error in /model command: ${error instanceof Error ? error.message : String(error)}`,
+              timestamp: new Date(),
+            });
+          }
+        },
+      },
+      {
+        name: 'context-size',
+        description: 'manage context size limit. Usage: /context-size [current|set <size>]',
+        action: async (_mainCommand, subCommand, args) => {
+          try {
+            switch (subCommand) {
+              case 'current':
+              case undefined: {
+                const currentContextSize = parseInt(process.env.GROKCLI_CONTEXT_SIZE || '128000', 10);
+                addMessage({
+                  type: MessageType.INFO,
+                  content: `🧠 Current Context Size: ${currentContextSize.toLocaleString()} tokens\n\n💡 Usage:\n  • /context-size current - show current context size\n  • /context-size set <size> - set context size (e.g., 256000)`,
+                  timestamp: new Date(),
+                });
+                return;
+              }
+              
+              case 'set': {
+                if (!args || args.trim() === '') {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: 'Usage: /context-size set <size>\nExample: /context-size set 256000',
+                    timestamp: new Date(),
+                  });
+                  return;
+                }
+                
+                const sizeString = args.trim();
+                const newSize = parseInt(sizeString, 10);
+                
+                if (isNaN(newSize) || newSize <= 0) {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: `❌ Invalid context size: ${sizeString}\nContext size must be a positive number.`,
+                    timestamp: new Date(),
+                  });
+                  return;
+                }
+                
+                if (newSize > 1000000) {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: `❌ Context size too large: ${newSize.toLocaleString()}\nMaximum recommended size is 1,000,000 tokens.`,
+                    timestamp: new Date(),
+                  });
+                  return;
+                }
+                
+                // Set the environment variable
+                process.env.GROKCLI_CONTEXT_SIZE = newSize.toString();
+                
+                addMessage({
+                  type: MessageType.INFO,
+                  content: `✅ Context size updated to: ${newSize.toLocaleString()} tokens\n\n⚠️  Note: This change applies to new conversations. Current conversation context may still use the previous limit.`,
+                  timestamp: new Date(),
+                });
+                return;
+              }
+              
+              default: {
+                addMessage({
+                  type: MessageType.ERROR,
+                  content: `Unknown /context-size command: ${subCommand}. Available: current, set`,
+                  timestamp: new Date(),
+                });
+                return;
+              }
+            }
+          } catch (error) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Error in /context-size command: ${error instanceof Error ? error.message : String(error)}`,
+              timestamp: new Date(),
+            });
+          }
+        },
+      },
+      {
         name: 'corgi',
         action: (_mainCommand, _subCommand, _args) => {
           toggleCorgiMode();
@@ -701,7 +959,7 @@ For more information, visit: https://github.com/stevederico/opencli`,
       },
       {
         name: 'about',
-        description: 'show OpenCLI version and system info',
+        description: 'show Grok CLI version and system info',
         action: async (_mainCommand, _subCommand, _args) => {
           const osVersion = process.platform;
           let sandboxEnv = 'no sandbox';
@@ -715,7 +973,7 @@ For more information, visit: https://github.com/stevederico/opencli`,
           const modelVersion = config?.getModel() || 'Unknown';
           const cliVersion = await getCliVersion();
           const selectedAuthType = settings.merged.selectedAuthType || '';
-          const gcpProject = process.env.GOOGLE_CLOUD_PROJECT || '';
+          const cloudProject = process.env.CLOUD_PROJECT || '';
           addMessage({
             type: MessageType.ABOUT,
             timestamp: new Date(),
@@ -724,13 +982,13 @@ For more information, visit: https://github.com/stevederico/opencli`,
             sandboxEnv,
             modelVersion,
             selectedAuthType,
-            gcpProject,
+            cloudProject,
           });
         },
       },
       {
         name: 'bug',
-        description: 'submit an OpenCLI bug report',
+        description: 'submit a Grok CLI bug report',
         action: async (_mainCommand, _subCommand, args) => {
           let bugDescription = _subCommand || '';
           if (args) {
@@ -741,7 +999,7 @@ For more information, visit: https://github.com/stevederico/opencli`,
           const osVersion = `${process.platform} ${process.version}`;
           let sandboxEnv = 'no sandbox';
           if (process.env.SANDBOX && process.env.SANDBOX !== 'sandbox-exec') {
-            sandboxEnv = process.env.SANDBOX.replace(/^gemini-(?:code-)?/, '');
+            sandboxEnv = process.env.SANDBOX.replace(/^grokcli-(?:code-)?/, '');
           } else if (process.env.SANDBOX === 'sandbox-exec') {
             sandboxEnv = `sandbox-exec (${
               process.env.SEATBELT_PROFILE || 'unknown'
@@ -761,7 +1019,7 @@ For more information, visit: https://github.com/stevederico/opencli`,
 `;
 
           let bugReportUrl =
-            'https://github.com/stevederico/opencli/issues/new?template=bug_report.yml&title={title}&info={info}';
+            'https://github.com/stevederico/grok-cli/issues/new?template=bug_report.yml&title={title}&info={info}';
           const bugCommand = config?.getBugCommand();
           if (bugCommand?.urlTemplate) {
             bugReportUrl = bugCommand.urlTemplate;
@@ -969,7 +1227,7 @@ For more information, visit: https://github.com/stevederico/opencli`,
           if (!checkpointDir) {
             addMessage({
               type: MessageType.ERROR,
-              content: 'Could not determine the .opencli directory path.',
+              content: 'Could not determine the .grokcli directory path.',
               timestamp: new Date(),
             });
             return;
@@ -1065,8 +1323,6 @@ For more information, visit: https://github.com/stevederico/opencli`,
     onDebugMessage,
     setShowHelp,
     refreshStatic,
-    openThemeDialog,
-    openAuthDialog,
     openEditorDialog,
     clearItems,
     performMemoryRefresh,

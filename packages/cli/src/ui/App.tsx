@@ -21,6 +21,8 @@ import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { useProviderStream } from './hooks/useProviderStream.js';
 import { useLoadingIndicator } from './hooks/useLoadingIndicator.js';
 import { useThemeCommand } from './hooks/useThemeCommand.js';
+import { useProviderCommand } from './hooks/useProviderCommand.js';
+import { useModelCommand } from './hooks/useModelCommand.js';
 import { useAuthCommand } from './hooks/useAuthCommand.js';
 import { useEditorSettings } from './hooks/useEditorSettings.js';
 import { useSlashCommandProcessor } from './hooks/slashCommandProcessor.js';
@@ -32,13 +34,14 @@ import { AutoAcceptIndicator } from './components/AutoAcceptIndicator.js';
 import { ShellModeIndicator } from './components/ShellModeIndicator.js';
 import { InputPrompt } from './components/InputPrompt.js';
 import { Footer } from './components/Footer.js';
-import { ThemeDialog } from './components/ThemeDialog.js';
+import { ProviderDialog } from './components/ProviderDialog.js';
+import { ModelDialog } from './components/ModelDialog.js';
 import { AuthDialog } from './components/AuthDialog.js';
 import { AuthInProgress } from './components/AuthInProgress.js';
 import { EditorSettingsDialog } from './components/EditorSettingsDialog.js';
 import { Colors } from './colors.js';
 import { Help } from './components/Help.js';
-import { loadHierarchicalGeminiMemory } from '../config/config.js';
+import { loadHierarchicalMemory } from '../config/config.js';
 import { LoadedSettings } from '../config/settings.js';
 import { Tips } from './components/Tips.js';
 import { useConsolePatcher } from './components/ConsolePatcher.js';
@@ -113,7 +116,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     setStaticKey((prev) => prev + 1);
   }, [setStaticKey, stdout]);
 
-  const [geminiMdFileCount, setGeminiMdFileCount] = useState<number>(0);
+  const [contextMdFileCount, setContextMdFileCount] = useState<number>(0);
   const [debugMessage, setDebugMessage] = useState<string>('');
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [themeError, setThemeError] = useState<string | null>(null);
@@ -145,16 +148,23 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     [consoleMessages],
   );
 
+  // Initialize theme without dialog
+  useThemeCommand(settings, setThemeError, addItem);
+
   const {
-    isThemeDialogOpen,
-    openThemeDialog,
-    handleThemeSelect,
-    handleThemeHighlight,
-  } = useThemeCommand(settings, setThemeError, addItem);
+    isProviderDialogOpen,
+    openProviderDialog,
+    handleProviderSelect,
+  } = useProviderCommand(config, addItem);
+
+  const {
+    isModelDialogOpen,
+    openModelDialog,
+    handleModelSelect,
+  } = useModelCommand(config, addItem);
 
   const {
     isAuthDialogOpen,
-    openAuthDialog,
     handleAuthSelect,
     handleAuthHighlight,
     isAuthenticating,
@@ -166,10 +176,10 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       const error = validateAuthMethod(settings.merged.selectedAuthType, config?.getProvider());
       if (error) {
         setAuthError(error);
-        openAuthDialog();
+        // Auth dialog won't be shown automatically anymore
       }
     }
-  }, [settings.merged.selectedAuthType, config, openAuthDialog, setAuthError]);
+  }, [settings.merged.selectedAuthType, config, setAuthError]);
 
   const {
     isEditorDialogOpen,
@@ -191,7 +201,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       Date.now(),
     );
     try {
-      const { memoryContent, fileCount } = await loadHierarchicalGeminiMemory(
+      const { memoryContent, fileCount } = await loadHierarchicalMemory(
         process.cwd(),
         config.getDebugMode(),
         config.getFileService(),
@@ -199,7 +209,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       );
       config.setUserMemory(memoryContent);
       config.setGeminiMdFileCount(fileCount);
-      setGeminiMdFileCount(fileCount);
+      setContextMdFileCount(fileCount);
 
       addItem(
         {
@@ -254,8 +264,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
           type: MessageType.INFO,
           text: `⚡ Slow response times detected. Automatically switching from ${currentModel} to ${fallbackModel} for faster responses for the remainder of this session.
 ⚡ To avoid this you can either upgrade to Standard tier. See: https://goo.gle/set-up-gemini-code-assist
-⚡ Or you can utilize a Gemini API Key. See: https://goo.gle/opencli-docs-auth#gemini-api-key
-⚡ You can switch authentication methods by typing /auth`,
+⚡ Or you can utilize a Gemini API Key. See: https://goo.gle/grokcli-docs-auth#gemini-api-key`,
         },
         Date.now(),
       );
@@ -279,14 +288,14 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     refreshStatic,
     setShowHelp,
     setDebugMessage,
-    openThemeDialog,
-    openAuthDialog,
     openEditorDialog,
     performMemoryRefresh,
     toggleCorgiMode,
     showToolDescriptions,
     setQuittingMessages,
     openPrivacyNotice,
+    openProviderDialog,
+    openModelDialog,
   );
   const pendingHistoryItems = [...pendingSlashCommandHistoryItems];
 
@@ -398,7 +407,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
 
   useEffect(() => {
     if (config) {
-      setGeminiMdFileCount(config.getGeminiMdFileCount());
+      setContextMdFileCount(config.getGeminiMdFileCount());
     }
   }, [config]);
 
@@ -414,8 +423,8 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
 
   const onAuthError = useCallback(() => {
     setAuthError('reauth required');
-    openAuthDialog();
-  }, [openAuthDialog, setAuthError]);
+    // Auth dialog won't be shown automatically anymore
+  }, [setAuthError]);
 
   const {
     streamingState,
@@ -686,31 +695,12 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
             </Box>
           )}
 
-          {isThemeDialogOpen ? (
-            <Box flexDirection="column">
-              {themeError && (
-                <Box marginBottom={1}>
-                  <Text color={Colors.AccentRed}>{themeError}</Text>
-                </Box>
-              )}
-              <ThemeDialog
-                onSelect={handleThemeSelect}
-                onHighlight={handleThemeHighlight}
-                settings={settings}
-                availableTerminalHeight={
-                  constrainHeight
-                    ? terminalHeight - staticExtraHeight
-                    : undefined
-                }
-                terminalWidth={mainAreaWidth}
-              />
-            </Box>
-          ) : isAuthenticating ? (
+          {isAuthenticating ? (
             <AuthInProgress
               onTimeout={() => {
                 setAuthError('Authentication timed out. Please try again.');
                 cancelAuthentication();
-                openAuthDialog();
+                // Auth dialog won't be shown automatically anymore
               }}
             />
           ) : isAuthDialogOpen ? (
@@ -734,6 +724,21 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 onSelect={handleEditorSelect}
                 settings={settings}
                 onExit={exitEditorDialog}
+              />
+            </Box>
+          ) : isProviderDialogOpen ? (
+            <Box flexDirection="column">
+              <ProviderDialog
+                onSelect={handleProviderSelect}
+                currentProvider={config?.getProvider() || 'ollama'}
+              />
+            </Box>
+          ) : isModelDialogOpen ? (
+            <Box flexDirection="column">
+              <ModelDialog
+                onSelect={handleModelSelect}
+                currentProvider={config?.getProvider() || 'ollama'}
+                currentModel={config?.getModel() || 'Unknown'}
               />
             </Box>
           ) : showPrivacyNotice ? (
@@ -776,7 +781,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                     </Text>
                   ) : (
                     <ContextSummaryDisplay
-                      geminiMdFileCount={geminiMdFileCount}
+                      contextMdFileCount={contextMdFileCount}
                       contextFileNames={contextFileNames}
                       mcpServers={config.getMcpServers()}
                       showToolDescriptions={showToolDescriptions}

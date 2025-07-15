@@ -1,5 +1,5 @@
 /**
- * Provider interface for OpenCLI
+ * Provider interface for Grok CLI
  * All LLM providers must implement this interface
  */
 

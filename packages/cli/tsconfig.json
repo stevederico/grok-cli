@@ -20,5 +20,8 @@
     "src/**/*.json",
     "./package.json"
   ],
+  "files": [
+    "src/core/providers/xai.ts"
+  ],
   "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
 }

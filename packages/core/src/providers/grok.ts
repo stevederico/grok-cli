@@ -8,7 +8,7 @@ export class GrokProvider extends Provider {
   constructor(config: ProviderConfig = {}) {
     super('grok', config);
     this.apiKey = config.apiKey || process.env.XAI_API_KEY;
-    this.model = config.model || process.env.XAI_MODEL || 'grok-3-mini';
+    this.model = config.model || process.env.XAI_MODEL || 'grok-4-0709';
     this.endpoint = config.endpoint || 'https://api.x.ai/v1';
   }
 

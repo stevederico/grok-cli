@@ -53,14 +53,14 @@ interface CliArgs {
 
 async function parseArguments(): Promise<CliArgs> {
   // Get provider first to determine default model
-  const provider = process.env.GROKCLI_PROVIDER || 'grok';
+  const provider = process.env.GROKCLI_PROVIDER || 'xai';
   let defaultModel = 'llama3.2:latest';
   
   // Set provider-specific default models
   if (provider === 'ollama') {
     defaultModel = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
-  } else if (provider === 'grok') {
-    defaultModel = process.env.GROKCLI_GROK_MODEL || 'grok-3-mini';
+  } else if (provider === 'xai') {
+    defaultModel = process.env.XAI_MODEL || 'grok-4-0709';
   }
 
   const argv = await yargs(hideBin(process.argv))
@@ -72,7 +72,7 @@ async function parseArguments(): Promise<CliArgs> {
     })
     .option('provider', {
       type: 'string',
-      description: 'LLM Provider (grok, ollama)',
+      description: 'LLM Provider (xai, ollama)',
       default: provider,
     })
     .option('prompt', {
@@ -131,7 +131,7 @@ async function parseArguments(): Promise<CliArgs> {
 // This function is now a thin wrapper around the server's implementation.
 // It's kept in the CLI for now as App.tsx directly calls it for memory refresh.
 // TODO: Consider if App.tsx should get memory via a server call or if Config should refresh itself.
-export async function loadHierarchicalGeminiMemory(
+export async function loadHierarchicalMemory(
   currentWorkingDirectory: string,
   debugMode: boolean,
   fileService: FileDiscoveryService,
@@ -151,6 +151,9 @@ export async function loadHierarchicalGeminiMemory(
     extensionContextFilePaths,
   );
 }
+
+// Legacy export for backward compatibility
+export const loadHierarchicalGeminiMemory = loadHierarchicalMemory;
 
 export async function loadCliConfig(
   settings: Settings,
@@ -183,8 +186,8 @@ export async function loadCliConfig(
   const extensionContextFilePaths = extensions.flatMap((e) => e.contextFiles);
 
   const fileService = new FileDiscoveryService(process.cwd());
-  // Call the (now wrapper) loadHierarchicalGeminiMemory which calls the server's version
-  const { memoryContent, fileCount } = await loadHierarchicalGeminiMemory(
+  // Call the (now wrapper) loadHierarchicalMemory which calls the server's version
+  const { memoryContent, fileCount } = await loadHierarchicalMemory(
     process.cwd(),
     debugMode,
     fileService,

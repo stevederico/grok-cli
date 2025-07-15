@@ -32,7 +32,7 @@ export async function runQuery(
 /**
  * List available providers
  */
-export { getAvailableProviders } from './providers/registry.js';
+export { getAvailableProviders, validateProvider, getDefaultProvider } from './providers/registry.js';
 
 /**
  * Get provider models

@@ -1,6 +1,6 @@
 {
-  "name": "grok-cli",
-  "version": "0.2.5",
+  "name": "@stevederico/grok-cli",
+  "version": "0.3.0",
   "description": "Grok CLI - Universal LLM CLI",
   "repository": "stevederico/grok-cli",
   "type": "module",

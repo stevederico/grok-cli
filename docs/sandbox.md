@@ -8,7 +8,7 @@ Before using sandboxing, you need to install and set up Grok CLI:
 
 ```bash
 # install grok-cli with npm
-npm install -g grok-cli
+npm install -g @stevederico/grok-cli
 
 # Verify installation
 grok-cli --version

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DefaultLight } from './default-light.js';
 import { DefaultDark } from './default.js';
 import { Theme, ThemeType } from './theme.js';
 import { LightTheme as NoColorLightTheme, DarkTheme as NoColorDarkTheme } from './no-color.js';
@@ -24,7 +23,6 @@ class ThemeManager {
   constructor() {
     this.availableThemes = [
       DefaultDark,
-      DefaultLight,
     ];
     this.activeTheme = DEFAULT_THEME;
   }

@@ -8,7 +8,7 @@ import { GitIgnoreParser, GitIgnoreFilter } from '../utils/gitIgnoreParser.js';
 import { isGitRepository } from '../utils/gitUtils.js';
 import * as path from 'path';
 
-const GEMINI_IGNORE_FILE_NAME = '.opencliignore';
+const GEMINI_IGNORE_FILE_NAME = '.grokcliignore';
 
 export interface FilterFilesOptions {
   respectGitIgnore?: boolean;
@@ -85,7 +85,7 @@ export class FileDiscoveryService {
   }
 
   /**
-   * Returns loaded patterns from .opencliignore
+   * Returns loaded patterns from .grokcliignore
    */
   getGeminiIgnorePatterns(): string[] {
     return this.geminiIgnoreFilter?.getPatterns() ?? [];

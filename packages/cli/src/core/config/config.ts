@@ -22,7 +22,6 @@ import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
-import { WebSearchTool } from '../tools/web-search.js';
 import { GeminiClient } from '../core/types.js';
 import { GROKCLI_CONFIG_DIR as GROKCLI_DIR } from '../tools/memoryTool.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
@@ -184,7 +183,9 @@ export class Config {
     this.fileDiscoveryService = params.fileDiscoveryService ?? null;
     this.bugCommand = params.bugCommand;
     this.model = params.model;
-    this.provider = params.provider ?? 'grok';
+    this.provider = params.provider ?? 
+      process.env.GROKCLI_PROVIDER ?? 
+      (process.env.XAI_API_KEY ? 'grok' : 'ollama');
     this.extensionContextFilePaths = params.extensionContextFilePaths ?? [];
 
     if (params.contextFileName) {
@@ -205,7 +206,7 @@ export class Config {
 
     if (provider === 'google') {
       // Google provider removed - redirect to alternative
-      throw new Error('Google Gemini provider has been removed. Please use "grok" or "ollama" providers instead.');
+      throw new Error('Google Gemini provider has been removed. Please use "xai" or "ollama" providers instead.');
       
       // Legacy code kept for reference (commented out):
       // const contentConfig = await createContentGeneratorConfig({
@@ -470,7 +471,6 @@ export function createToolRegistry(config: Config): Promise<ToolRegistry> {
   registerCoreTool(ReadManyFilesTool, targetDir, config);
   registerCoreTool(ShellTool, config);
   registerCoreTool(MemoryTool);
-  registerCoreTool(WebSearchTool, config);
   return (async () => {
     await registry.discoverTools();
     return registry;

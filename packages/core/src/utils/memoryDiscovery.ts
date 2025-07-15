@@ -136,7 +136,7 @@ async function getGeminiMdFilePathsInternal(
         );
       }
 
-      // Skip the global .opencli directory itself during upward scan from CWD,
+      // Skip the global .grokcli directory itself during upward scan from CWD,
       // as global is handled separately and explicitly first.
       if (currentDir === path.join(resolvedHome, GROKCLI_CONFIG_DIR)) {
         if (debugMode) {
@@ -265,7 +265,7 @@ function concatenateInstructions(
 }
 
 /**
- * Loads hierarchical OPENCLI.md files and concatenates their content.
+ * Loads hierarchical GROKCLI.md files and concatenates their content.
  * This function is intended for use by the server.
  */
 export async function loadServerHierarchicalMemory(
@@ -289,7 +289,7 @@ export async function loadServerHierarchicalMemory(
     extensionContextFilePaths,
   );
   if (filePaths.length === 0) {
-    if (debugMode) logger.debug('No OPENCLI.md files found in hierarchy.');
+    if (debugMode) logger.debug('No GROKCLI.md files found in hierarchy.');
     return { memoryContent: '', fileCount: 0 };
   }
   const contentsWithPaths = await readGeminiMdFiles(filePaths, debugMode);

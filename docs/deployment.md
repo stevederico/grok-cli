@@ -16,7 +16,7 @@ This is the recommended way for end-users to install Grok CLI. It involves downl
 
   ```bash
   # Install the CLI globally
-  npm install -g grok-cli
+  npm install -g @stevederico/grok-cli
 
   # Now you can run the CLI from anywhere
   grok-cli

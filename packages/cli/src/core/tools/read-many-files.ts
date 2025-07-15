@@ -258,13 +258,13 @@ Use this tool when the user's query implies needing the content of several files
 
     let excludeDesc = `Excluding: ${finalExclusionPatternsForDescription.length > 0 ? `patterns like \`${finalExclusionPatternsForDescription.slice(0, 2).join('`, `')}${finalExclusionPatternsForDescription.length > 2 ? '...`' : '`'}` : 'none specified'}`;
 
-    // Add a note if .opencliignore patterns contributed to the final list of exclusions
+    // Add a note if .grokcliignore patterns contributed to the final list of exclusions
     if (this.geminiIgnorePatterns.length > 0) {
       const geminiPatternsInEffect = this.geminiIgnorePatterns.filter((p) =>
         finalExclusionPatternsForDescription.includes(p),
       ).length;
       if (geminiPatternsInEffect > 0) {
-        excludeDesc += ` (includes ${geminiPatternsInEffect} from .opencliignore)`;
+        excludeDesc += ` (includes ${geminiPatternsInEffect} from .grokcliignore)`;
       }
     }
 

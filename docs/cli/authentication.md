@@ -95,7 +95,7 @@ To use Grok AI models:
    ```
 3. **Optionally set the model:**
    ```bash
-   export XAI_MODEL="grok-3-mini"
+   export XAI_MODEL="grok-4-0709"
    ```
 4. **Set Grok as your default provider:**
    ```bash

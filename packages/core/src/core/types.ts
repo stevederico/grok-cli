@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Basic types for OpenCLI core functionality
+// Basic types for Grok CLI core functionality
 
 export enum AuthType {
   GOOGLE_OAUTH = 'google_oauth',

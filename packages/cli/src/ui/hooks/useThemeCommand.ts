@@ -28,32 +28,20 @@ export const useThemeCommand = (
   // Determine the effective theme
   const effectiveTheme = loadedSettings.merged.theme;
 
-  // Initial state: Open dialog if no theme is set in either user or workspace settings
-  const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(
-    effectiveTheme === undefined && !process.env.NO_COLOR,
-  );
+  // Initial state: Never open theme dialog, always use default
+  const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
   // TODO: refactor how theme's are accessed to avoid requiring a forced render.
   const [, setForceRender] = useState(0);
 
   // Apply initial theme on component mount
   useEffect(() => {
-    if (effectiveTheme === undefined) {
-      if (process.env.NO_COLOR) {
-        addItem(
-          {
-            type: MessageType.INFO,
-            text: 'Theme configuration unavailable due to NO_COLOR env variable.',
-          },
-          Date.now(),
-        );
-      }
-      // If no theme is set and NO_COLOR is not set, the dialog is already open.
-      return;
-    }
-
-    if (!themeManager.setActiveTheme(effectiveTheme)) {
-      setIsThemeDialogOpen(true);
-      setThemeError(`Theme "${effectiveTheme}" not found.`);
+    // Always use default theme if no theme is set
+    const themeToUse = effectiveTheme || 'Default';
+    
+    if (!themeManager.setActiveTheme(themeToUse)) {
+      // Fallback to default theme if specified theme not found
+      themeManager.setActiveTheme('Default');
+      setThemeError(null);
     } else {
       setThemeError(null);
     }

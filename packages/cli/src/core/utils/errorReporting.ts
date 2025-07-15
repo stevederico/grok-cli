@@ -29,7 +29,7 @@ export async function reportError(
   type = 'general',
 ): Promise<void> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const reportFileName = `openclient-error-${type}-${timestamp}.json`;
+  const reportFileName = `grokclient-error-${type}-${timestamp}.json`;
   const reportPath = path.join(os.tmpdir(), reportFileName);
 
   let errorToReport: { message: string; stack?: string };

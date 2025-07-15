@@ -14,10 +14,9 @@ import {
   AuthType 
 } from '../core/index.js';
 import stripJsonComments from 'strip-json-comments';
-import { DefaultLight } from '../ui/themes/default-light.js';
 import { DefaultDark } from '../ui/themes/default.js';
 
-export const SETTINGS_DIRECTORY_NAME = '.opencli';
+export const SETTINGS_DIRECTORY_NAME = '.grokcli';
 export const USER_SETTINGS_DIR = path.join(homedir(), SETTINGS_DIRECTORY_NAME);
 export const USER_SETTINGS_PATH = path.join(USER_SETTINGS_DIR, 'settings.json');
 
@@ -187,7 +186,7 @@ export function loadSettings(workspaceDir: string): LoadedSettings {
       userSettings = resolveEnvVarsInObject(parsedUserSettings);
       // Support legacy theme names
       if (userSettings.theme && userSettings.theme === 'VS') {
-        userSettings.theme = DefaultLight.name;
+        userSettings.theme = DefaultDark.name;
       } else if (userSettings.theme && userSettings.theme === 'VS2015') {
         userSettings.theme = DefaultDark.name;
       }
@@ -214,7 +213,7 @@ export function loadSettings(workspaceDir: string): LoadedSettings {
       ) as Settings;
       workspaceSettings = resolveEnvVarsInObject(parsedWorkspaceSettings);
       if (workspaceSettings.theme && workspaceSettings.theme === 'VS') {
-        workspaceSettings.theme = DefaultLight.name;
+        workspaceSettings.theme = DefaultDark.name;
       } else if (
         workspaceSettings.theme &&
         workspaceSettings.theme === 'VS2015'

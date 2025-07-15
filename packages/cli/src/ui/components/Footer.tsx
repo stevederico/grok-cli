@@ -58,7 +58,7 @@ export const Footer: React.FC<FooterProps> = ({
       <Box flexDirection="column">
         <Box>
           <Text color={Colors.LightBlue}>
-            {shortenPath(tildeifyPath(targetDir), 70)}
+            {targetDir.split('/').pop() || targetDir}
             {branchName && <Text color={Colors.Gray}> ({branchName}*)</Text>}
           </Text>
           {debugMode && (
@@ -86,21 +86,17 @@ export const Footer: React.FC<FooterProps> = ({
       >
         {process.env.SANDBOX && process.env.SANDBOX !== 'sandbox-exec' ? (
           <Text color="green">
-            {process.env.SANDBOX.replace(/^gemini-(?:cli-)?/, '')}
+            {process.env.SANDBOX.replace(/^grokcli-(?:cli-)?/, '')}
           </Text>
         ) : process.env.SANDBOX === 'sandbox-exec' ? (
           <Text color={Colors.AccentYellow}>
             MacOS Seatbelt{' '}
             <Text color={Colors.Gray}>({process.env.SEATBELT_PROFILE})</Text>
           </Text>
-        ) : (
-          <Text color={Colors.AccentRed}>
-            no sandbox <Text color={Colors.Gray}>(see /docs)</Text>
-          </Text>
-        )}
+        ) : null}
       </Box>
 
-      {/* Right Section: Gemini Label and Console Summary */}
+      {/* Right Section: AI Model Label and Console Summary */}
       <Box alignItems="center">
         <Text color={Colors.AccentBlue}>
           {' '}

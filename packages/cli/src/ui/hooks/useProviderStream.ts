@@ -399,14 +399,17 @@ export const useProviderStream = (
 
       try {
         // Get provider configuration
-        const providerName = config.getProvider() || 'ollama';
+        const providerName = config.getProvider() || 
+          process.env.GROKCLI_PROVIDER || 
+          (process.env.XAI_API_KEY ? 'grok' : 'ollama');
         const model = config.getModel();
 
         console.debug(`[DEBUG] Interactive UI - Provider: ${providerName}, Model: ${model}`);
 
         const providerConfig: any = {};
-        if (providerName === 'grok') {
+        if (providerName === 'xai') {
           providerConfig.apiKey = process.env.XAI_API_KEY || '';
+          providerConfig.contextSize = parseInt(process.env.GROKCLI_CONTEXT_SIZE || '128000', 10);
         } else if (providerName === 'ollama') {
           providerConfig.endpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';
           providerConfig.model = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';

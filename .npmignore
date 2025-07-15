@@ -1,0 +1,36 @@
+# Development files
+*.test.js
+*.test.ts
+test/
+tests/
+coverage/
+.nyc_output/
+junit.xml
+
+# Build tools
+eslint.config.js
+tsconfig.json
+vitest.config.ts
+esbuild.config.js
+Makefile
+
+# Development directories
+integration-tests/
+scripts/
+docs/
+eslint-rules/
+packages/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Source files (since we're distributing built files)
+src/

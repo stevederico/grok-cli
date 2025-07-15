@@ -2,7 +2,17 @@
   "name": "@stevederico/grok-cli",
   "version": "0.3.0",
   "description": "Grok CLI - Universal LLM CLI",
-  "repository": "stevederico/grok-cli",
+  "keywords": ["cli", "ai", "grok", "llm", "xai", "ollama", "interactive"],
+  "homepage": "https://github.com/stevederico/grok-cli#readme",
+  "bugs": {
+    "url": "https://github.com/stevederico/grok-cli/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "Steve Derico",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stevederico/grok-cli.git"
+  },
   "type": "module",
   "main": "dist/index.js",
   "bin": {

@@ -1,6 +1,14 @@
 {
   "name": "@stevederico/grok-cli",
   "version": "0.3.0",
+  "description": "Grok CLI - Universal LLM CLI",
+  "keywords": ["cli", "ai", "grok", "llm", "xai", "ollama", "interactive"],
+  "homepage": "https://github.com/stevederico/grok-cli#readme",
+  "bugs": {
+    "url": "https://github.com/stevederico/grok-cli/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "Steve Derico",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -8,7 +16,10 @@
   "workspaces": [
     "packages/*"
   ],
-  "repository": "@stevederico/grok-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stevederico/grok-cli.git"
+  },
   "config": {},
   "scripts": {
     "generate": "node scripts/generate-git-commit-info.js",

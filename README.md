@@ -36,8 +36,8 @@ grok-cli
 Or work with an existing project:
 
 ```sh
-git clone https://github.com/stevederico/grok-cli
-cd grok-cli
+git clone https://github.com/stevederico/skateboard
+cd skateboard
 grok-cli
 > Give me a summary of all of the changes that went in yesterday
 ```

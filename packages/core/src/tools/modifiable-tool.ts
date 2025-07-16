@@ -52,7 +52,7 @@ function createTempFilesForModify(
   file_path: string,
 ): { oldPath: string; newPath: string } {
   const tempDir = os.tmpdir();
-  const diffDir = path.join(tempDir, 'opencli-tool-modify-diffs');
+  const diffDir = path.join(tempDir, 'grokcli-tool-modify-diffs');
 
   if (!fs.existsSync(diffDir)) {
     fs.mkdirSync(diffDir, { recursive: true });
@@ -62,11 +62,11 @@ function createTempFilesForModify(
   const timestamp = Date.now();
   const tempOldPath = path.join(
     diffDir,
-    `opencli-modify-${fileName}-old-${timestamp}`,
+    `grokcli-modify-${fileName}-old-${timestamp}`,
   );
   const tempNewPath = path.join(
     diffDir,
-    `opencli-modify-${fileName}-new-${timestamp}`,
+    `grokcli-modify-${fileName}-new-${timestamp}`,
   );
 
   fs.writeFileSync(tempOldPath, currentContent, 'utf8');

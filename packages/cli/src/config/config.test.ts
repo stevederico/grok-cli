@@ -111,7 +111,7 @@ describe('Hierarchical Memory Loading (config.ts) - Placeholder Suite', () => {
           name: 'ext1',
           version: '1.0.0',
         },
-        contextFiles: ['/path/to/ext1/OPENCLI.md'],
+        contextFiles: ['/path/to/ext1/GROKCLI.md'],
       },
       {
         config: {
@@ -137,7 +137,7 @@ describe('Hierarchical Memory Loading (config.ts) - Placeholder Suite', () => {
       false,
       expect.any(Object),
       [
-        '/path/to/ext1/OPENCLI.md',
+        '/path/to/ext1/GROKCLI.md',
         '/path/to/ext3/context1.md',
         '/path/to/ext3/context2.md',
       ],
@@ -154,8 +154,8 @@ describe('Hierarchical Memory Loading (config.ts) - Placeholder Suite', () => {
   // Example of a previously failing test structure:
   /*
   it('should correctly use mocked homedir for global path', async () => {
-    const MOCK_GEMINI_DIR_LOCAL = path.join('/mock/home/user', '.opencli');
-    const MOCK_GLOBAL_PATH_LOCAL = path.join(MOCK_GEMINI_DIR_LOCAL, 'OPENCLI.md');
+    const MOCK_GEMINI_DIR_LOCAL = path.join('/mock/home/user', '.grokcli');
+    const MOCK_GLOBAL_PATH_LOCAL = path.join(MOCK_GEMINI_DIR_LOCAL, 'GROKCLI.md');
     mockFs({
       [MOCK_GLOBAL_PATH_LOCAL]: { type: 'file', content: 'GlobalContentOnly' }
     });

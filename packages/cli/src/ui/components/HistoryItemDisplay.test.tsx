@@ -73,7 +73,7 @@ describe('<HistoryItemDisplay />', () => {
     const { lastFrame } = render(
       <HistoryItemDisplay {...baseItem} item={item} />,
     );
-    expect(lastFrame()).toContain('About OpenCLI');
+    expect(lastFrame()).toContain('About GrokCLI');
   });
 
   it('renders SessionSummaryDisplay for "quit" type', () => {

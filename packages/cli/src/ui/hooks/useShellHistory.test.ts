@@ -21,7 +21,7 @@ const MOCKED_PROJECT_HASH = 'mocked_hash';
 
 const MOCKED_HISTORY_DIR = path.join(
   MOCKED_HOME_DIR,
-  '.opencli',
+  '.grokcli',
   'tmp',
   MOCKED_PROJECT_HASH,
 );

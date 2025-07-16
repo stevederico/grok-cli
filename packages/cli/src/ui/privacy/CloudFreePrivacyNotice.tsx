@@ -57,7 +57,7 @@ export const CloudFreePrivacyNotice = ({
       </Text>
       <Newline />
       <Text>
-        When you use Gemini Code Assist for individuals with OpenCLI, Google
+        When you use Gemini Code Assist for individuals with GrokCLI, Google
         collects your prompts, related code, generated output, code edits,
         related feature usage information, and your feedback to provide,
         improve, and develop Google products and services and machine learning

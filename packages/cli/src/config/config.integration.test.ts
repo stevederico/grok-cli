@@ -37,7 +37,7 @@ describe('Configuration Integration Tests', () => {
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(tmpdir(), 'opencli-test-'));
+    tempDir = fs.mkdtempSync(path.join(tmpdir(), 'grokcli-test-'));
     originalEnv = { ...process.env };
     true = 'test-api-key';
     vi.clearAllMocks();

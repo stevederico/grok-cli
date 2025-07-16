@@ -5,12 +5,18 @@
 
 Grok CLI is an open-source interactive CLI tool that provides a flexible and powerful interface for AI-assisted workflows.
 
+## Quick Start
+
+```bash
+npm i -g @stevederico/grok-cli
+grok-cli
+```
+
 ## Key Benefits
 
 - **Interactive CLI Experience**: Streamlined, user-friendly command-line interface
 - **Built-in Provider Support**: 
   - Grok (xAI)
-  - Ollama
   - Easily extendable to other providers
 
 ## Environment Variables
@@ -21,46 +27,14 @@ Grok CLI is an open-source interactive CLI tool that provides a flexible and pow
 |----------|---------------------|-------------|---------|
 | Grok (xAI) | `XAI_API_KEY` | API key for Grok AI | `export XAI_API_KEY="your_grok_api_key"` |
 | Grok (xAI) | `XAI_MODEL` | Specific Grok model to use | `export XAI_MODEL="grok-4-0709"` |
-| Ollama | `OLLAMA_HOST` | Ollama server endpoint | `export OLLAMA_HOST="http://localhost:11434"` |
+| `GROK_CLI_PROVIDER` | Set the default AI provider | `xai` | `export GROK_CLI_PROVIDER="xai"` |
 
-### General Configuration
+### Ollama Configuration
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
-| `GROK_CLI_PROVIDER` | Set the default AI provider | `grok` | `export GROK_CLI_PROVIDER="ollama"` |
-| `GROK_CLI_MODEL` | Set the default model for the provider | Provider-specific | `export GROK_CLI_MODEL="llama3"` |
-
-## Quickstart
-
-1. **Prerequisites:** Install [Node.js 18+](https://nodejs.org/en/download).
-2. **Install dependencies:**
-
-   ```bash
-   npm install
-   ```
-
-3. **Configure Provider:**
-   Set your preferred LLM provider's API key or local endpoint
-
-   ```bash
-   # For Grok
-   export XAI_API_KEY="your_grok_api_key"
-
-   # For Ollama (local inference)
-   export OLLAMA_HOST="http://localhost:11434"
-   ```
-
-4. **Start the CLI:**
-
-   ```bash
-   npm start
-   ```
-
-5. **Pick a color theme**
-
-You can now choose between Light and Dark themes for Grok CLI.
-
-You are now ready to use Grok CLI!
+| `GROKCLI_OLLAMA_MODEL` | Set the default model for the Ollama provider | `llama3` | `export GROKCLI_OLLAMA_MODEL="llama3"` |
+| `OLLAMA_HOST` | Set the Ollama host | `http://localhost:11434` | `export OLLAMA_HOST="http://localhost:11434"` |
 
 ## Examples
 
@@ -78,7 +52,7 @@ Or work with an existing project:
 ```sh
 git clone https://github.com/stevederico/grok-cli
 cd grok-cli
-grok
+grok-cli
 > Give me a summary of all of the changes that went in yesterday
 ```
 
@@ -99,7 +73,7 @@ having issues.
 
 ### Explore a new codebase
 
-Start by `cd`ing into an existing or newly-cloned repository and running `grok`.
+Start by `cd`ing into an existing or newly-cloned repository and running `grok-cli`.
 
 ```text
 > Describe the main pieces of this system's architecture.

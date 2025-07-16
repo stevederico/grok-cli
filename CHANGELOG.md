@@ -60,7 +60,7 @@
 - Unused folders
 - Other providers
 ### Changed
-- Replaced OpenCLI components
+- Replaced GrokCLI components
 
 ## [0.2.2] - 2025-06-20
 ### Added

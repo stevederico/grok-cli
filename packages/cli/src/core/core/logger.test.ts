@@ -21,7 +21,7 @@ import { Content } from '../__stubs__/google-genai.js';
 import crypto from 'node:crypto';
 import os from 'node:os';
 
-const GEMINI_DIR_NAME = '.opencli';
+const GEMINI_DIR_NAME = '.grokcli';
 const TMP_DIR_NAME = 'tmp';
 const LOG_FILE_NAME = 'logs.json';
 const CHECKPOINT_FILE_NAME = 'checkpoint.json';
@@ -97,7 +97,7 @@ describe('Logger', () => {
   });
 
   describe('initialize', () => {
-    it('should create .opencli directory and an empty log file if none exist', async () => {
+    it('should create .grokcli directory and an empty log file if none exist', async () => {
       const dirExists = await fs
         .access(TEST_GEMINI_DIR)
         .then(() => true)

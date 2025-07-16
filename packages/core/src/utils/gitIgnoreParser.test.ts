@@ -80,20 +80,20 @@ node_modules/
     it('should handle custom patterns file name', () => {
       vi.mocked(isGitRepository).mockReturnValue(false);
       vi.mocked(fs.readFileSync).mockImplementation((filePath) => {
-        if (filePath === path.join(mockProjectRoot, '.opencliignore')) {
+        if (filePath === path.join(mockProjectRoot, '.grokcliignore')) {
           return 'temp/\n*.tmp';
         }
         throw new Error('ENOENT');
       });
 
-      parser.loadPatterns('.opencliignore');
+      parser.loadPatterns('.grokcliignore');
       expect(parser.getPatterns()).toEqual(['temp/', '*.tmp']);
       expect(parser.isIgnored('temp/file.txt')).toBe(true);
       expect(parser.isIgnored('src/file.tmp')).toBe(true);
     });
 
-    it('should initialize without errors when no .opencliignore exists', () => {
-      expect(() => parser.loadPatterns('.opencliignore')).not.toThrow();
+    it('should initialize without errors when no .grokcliignore exists', () => {
+      expect(() => parser.loadPatterns('.grokcliignore')).not.toThrow();
     });
   });
 

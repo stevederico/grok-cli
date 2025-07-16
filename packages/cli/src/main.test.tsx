@@ -109,7 +109,7 @@ describe('gemini.tsx main function', () => {
       settings: {},
     };
     const workspaceSettingsFile: SettingsFile = {
-      path: '/workspace/.opencli/settings.json',
+      path: '/workspace/.grokcli/settings.json',
       settings: {},
     };
     const mockLoadedSettings = new LoadedSettings(

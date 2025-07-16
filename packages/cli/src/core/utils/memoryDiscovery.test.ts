@@ -392,7 +392,7 @@ describe('loadServerHierarchicalMemory', () => {
     mockFs.stat.mockImplementation(async (p) => {
       if (p === path.join(PROJECT_ROOT, '.git')) {
         return { isDirectory: () => true } as Stats;
-      } else if (p === path.join(PROJECT_ROOT, '.opencli')) {
+      } else if (p === path.join(PROJECT_ROOT, '.grokcli')) {
         return { isDirectory: () => true } as Stats;
       }
       throw new Error('File not found');
@@ -577,7 +577,7 @@ describe('loadServerHierarchicalMemory', () => {
   });
 
   it('should load extension context file paths', async () => {
-    const extensionFilePath = '/test/extensions/ext1/OPENCLI.md';
+    const extensionFilePath = '/test/extensions/ext1/GROKCLI.md';
     mockFs.access.mockImplementation(async (p) => {
       if (p === extensionFilePath) {
         return undefined;

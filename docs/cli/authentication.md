@@ -117,7 +117,7 @@ To use local Ollama models:
    ```
 4. **Optionally set the model:**
    ```bash
-   export GROK_CLI_MODEL="llama3"
+   export GROKCLI_OLLAMA_MODEL="llama3"
    ```
 
 For more details on environment variables and provider configuration, see the main [README](../../README.md).

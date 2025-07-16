@@ -124,7 +124,7 @@ describe('modifyWithEditor', () => {
       expect(fs.writeFileSync).toHaveBeenNthCalledWith(
         1,
         expect.stringContaining(
-          path.join(tempDir, 'opencli-tool-modify-diffs'),
+          path.join(tempDir, 'grokcli-tool-modify-diffs'),
         ),
         currentContent,
         'utf8',
@@ -132,7 +132,7 @@ describe('modifyWithEditor', () => {
       expect(fs.writeFileSync).toHaveBeenNthCalledWith(
         2,
         expect.stringContaining(
-          path.join(tempDir, 'opencli-tool-modify-diffs'),
+          path.join(tempDir, 'grokcli-tool-modify-diffs'),
         ),
         proposedContent,
         'utf8',
@@ -202,7 +202,7 @@ describe('modifyWithEditor', () => {
       );
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(
-        path.join(tempDir, 'opencli-tool-modify-diffs'),
+        path.join(tempDir, 'grokcli-tool-modify-diffs'),
         { recursive: true },
       );
     });
@@ -343,10 +343,10 @@ describe('modifyWithEditor', () => {
     const oldFilePath = writeFileCalls[0][0];
     const newFilePath = writeFileCalls[1][0];
 
-    expect(oldFilePath).toMatch(/opencli-modify-test-file\.txt-old-\d+$/);
-    expect(newFilePath).toMatch(/opencli-modify-test-file\.txt-new-\d+$/);
-    expect(oldFilePath).toContain(`${tempDir}/opencli-tool-modify-diffs/`);
-    expect(newFilePath).toContain(`${tempDir}/opencli-tool-modify-diffs/`);
+    expect(oldFilePath).toMatch(/grokcli-modify-test-file\.txt-old-\d+$/);
+    expect(newFilePath).toMatch(/grokcli-modify-test-file\.txt-new-\d+$/);
+    expect(oldFilePath).toContain(`${tempDir}/grokcli-tool-modify-diffs/`);
+    expect(newFilePath).toContain(`${tempDir}/grokcli-tool-modify-diffs/`);
   });
 });
 

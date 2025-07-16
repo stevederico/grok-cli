@@ -125,7 +125,7 @@ vi.mock('@grok-cli/core', async (importOriginal) => {
         getProjectRoot: vi.fn(() => opts.projectRoot),
         getGeminiClient: vi.fn(() => ({})),
         getCheckpointingEnabled: vi.fn(() => opts.checkpointing ?? true),
-        getAllGeminiMdFilenames: vi.fn(() => ['OPENCLI.md']),
+        getAllGeminiMdFilenames: vi.fn(() => ['GROKCLI.md']),
         setFlashFallbackHandler: vi.fn(),
       };
     });
@@ -133,7 +133,7 @@ vi.mock('@grok-cli/core', async (importOriginal) => {
     ...actualCore,
     Config: ConfigClassMock,
     MCPServerConfig: actualCore.MCPServerConfig,
-    getAllGeminiMdFilenames: vi.fn(() => ['OPENCLI.md']),
+    getAllGeminiMdFilenames: vi.fn(() => ['GROKCLI.md']),
   };
 });
 
@@ -186,7 +186,7 @@ describe('App UI', () => {
       settings: {},
     };
     const workspaceSettingsFile: SettingsFile = {
-      path: '/workspace/.opencli/settings.json',
+      path: '/workspace/.grokcli/settings.json',
       settings: {
         ...settings,
       },
@@ -227,7 +227,7 @@ describe('App UI', () => {
     vi.clearAllMocks(); // Clear mocks after each test
   });
 
-  it('should display default "OPENCLI.md" in footer when contextFileName is not set and count is 1', async () => {
+  it('should display default "GROKCLI.md" in footer when contextFileName is not set and count is 1', async () => {
     mockConfig.getGeminiMdFileCount.mockReturnValue(1);
     // For this test, ensure showMemoryUsage is false or debugMode is false if it relies on that
     mockConfig.getDebugMode.mockReturnValue(false);
@@ -241,10 +241,10 @@ describe('App UI', () => {
     );
     currentUnmount = unmount;
     await Promise.resolve(); // Wait for any async updates
-    expect(lastFrame()).toContain('Using 1 OPENCLI.md file');
+    expect(lastFrame()).toContain('Using 1 GROKCLI.md file');
   });
 
-  it('should display default "OPENCLI.md" with plural when contextFileName is not set and count is > 1', async () => {
+  it('should display default "GROKCLI.md" with plural when contextFileName is not set and count is > 1', async () => {
     mockConfig.getGeminiMdFileCount.mockReturnValue(2);
     mockConfig.getDebugMode.mockReturnValue(false);
     mockConfig.getShowMemoryUsage.mockReturnValue(false);
@@ -257,7 +257,7 @@ describe('App UI', () => {
     );
     currentUnmount = unmount;
     await Promise.resolve();
-    expect(lastFrame()).toContain('Using 2 OPENCLI.md files');
+    expect(lastFrame()).toContain('Using 2 GROKCLI.md files');
   });
 
   it('should display custom contextFileName in footer when set and count is 1', async () => {
@@ -340,7 +340,7 @@ describe('App UI', () => {
     expect(lastFrame()).not.toContain('ANY_FILE.MD');
   });
 
-  it('should display OPENCLI.md and MCP server count when both are present', async () => {
+  it('should display GROKCLI.md and MCP server count when both are present', async () => {
     mockConfig.getGeminiMdFileCount.mockReturnValue(2);
     mockConfig.getMcpServers.mockReturnValue({
       server1: {} as MCPServerConfig,
@@ -359,7 +359,7 @@ describe('App UI', () => {
     expect(lastFrame()).toContain('server');
   });
 
-  it('should display only MCP server count when OPENCLI.md count is 0', async () => {
+  it('should display only MCP server count when GROKCLI.md count is 0', async () => {
     mockConfig.getGeminiMdFileCount.mockReturnValue(0);
     mockConfig.getMcpServers.mockReturnValue({
       server1: {} as MCPServerConfig,

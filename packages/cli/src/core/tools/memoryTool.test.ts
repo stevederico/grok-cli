@@ -87,7 +87,7 @@ describe('MemoryTool', () => {
   describe('performAddMemoryEntry (static method)', () => {
     const testFilePath = path.join(
       '/mock/home',
-      '.opencli',
+      '.grokcli',
       DEFAULT_CONTEXT_FILENAME, // Use the default for basic tests
     );
 
@@ -207,7 +207,7 @@ describe('MemoryTool', () => {
       // Use getCurrentGeminiMdFilename for the default expectation before any setGeminiMdFilename calls in a test
       const expectedFilePath = path.join(
         '/mock/home',
-        '.opencli',
+        '.grokcli',
         getCurrentGeminiMdFilename(), // This will be DEFAULT_CONTEXT_FILENAME unless changed by a test
       );
 

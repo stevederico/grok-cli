@@ -196,7 +196,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     addItem(
       {
         type: MessageType.INFO,
-        text: 'Refreshing hierarchical memory (OPENCLI.md or other context files)...',
+        text: 'Refreshing hierarchical memory (GROKCLI.md or other context files)...',
       },
       Date.now(),
     );

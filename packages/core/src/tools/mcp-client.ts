@@ -195,7 +195,7 @@ async function connectAndDiscover(
   }
 
   const mcpClient = new Client({
-    name: 'opencli-mcp-client',
+    name: 'grokcli-mcp-client',
     version: '0.0.1',
   });
 

@@ -15,10 +15,10 @@ export const PrivacyNotice = ({ onExit }: PrivacyNoticeProps) => {
   return (
     <Box flexDirection="column" marginY={1}>
       <Text bold color={Colors.AccentPurple}>
-        OpenCLI Privacy Notice
+        GrokCLI Privacy Notice
       </Text>
       <Text>
-        OpenCLI is committed to protecting your privacy and ensuring secure, transparent usage of our platform.
+        GrokCLI is committed to protecting your privacy and ensuring secure, transparent usage of our platform.
       </Text>
       <Text color={Colors.Gray}>Press Enter to close.</Text>
     </Box>

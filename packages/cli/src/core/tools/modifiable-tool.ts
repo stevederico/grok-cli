@@ -69,11 +69,11 @@ function createTempFilesForModify(
   const timestamp = Date.now();
   const tempOldPath = path.join(
     diffDir,
-    `opencli-modify-${fileName}-old-${timestamp}`,
+    `grokcli-modify-${fileName}-old-${timestamp}`,
   );
   const tempNewPath = path.join(
     diffDir,
-    `opencli-modify-${fileName}-new-${timestamp}`,
+    `grokcli-modify-${fileName}-new-${timestamp}`,
   );
 
   fs.writeFileSync(tempOldPath, currentContent, 'utf8');

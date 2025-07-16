@@ -1,9 +1,5 @@
 # @stevederico/grok-cli
-
 <img width="719" height="432" alt="Screenshot 2025-07-16 at 1 13 58 PM" src="https://github.com/user-attachments/assets/cd174977-c5cc-4f00-8dbd-3dde6697b7d8" />
-
-
-
 
 Grok CLI is an open-source interactive CLI tool that provides a flexible and powerful interface for AI-assisted workflows.
 
@@ -14,13 +10,6 @@ npm i -g @stevederico/grok-cli
 grok-cli
 ```
 
-## Key Benefits
-
-- **Interactive CLI Experience**: Streamlined, user-friendly command-line interface
-- **Built-in Provider Support**: 
-  - Grok (xAI)
-  - Easily extendable to other providers
-
 ## Environment Variables
 
 ### Provider Configuration
@@ -29,14 +18,8 @@ grok-cli
 |----------|---------------------|-------------|---------|
 | Grok (xAI) | `XAI_API_KEY` | API key for Grok AI | `export XAI_API_KEY="your_grok_api_key"` |
 | Grok (xAI) | `XAI_MODEL` | Specific Grok model to use | `export XAI_MODEL="grok-4-0709"` |
-| `GROK_CLI_PROVIDER` | Set the default AI provider | `xai` | `export GROK_CLI_PROVIDER="xai"` |
+| Default Provider | `GROK_CLI_PROVIDER` | Set the default AI provider | `xai` | `export GROK_CLI_PROVIDER="xai"` |
 
-### Ollama Configuration
-
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `GROKCLI_OLLAMA_MODEL` | Set the default model for the Ollama provider | `llama3` | `export GROKCLI_OLLAMA_MODEL="llama3"` |
-| `OLLAMA_HOST` | Set the Ollama host | `http://localhost:11434` | `export OLLAMA_HOST="http://localhost:11434"` |
 
 ## Examples
 
@@ -64,58 +47,12 @@ grok-cli
 - [CLI Commands](./docs/cli/commands.md)
 - [Troubleshooting guide](./docs/troubleshooting.md)
 - [Full documentation](./docs/index.md)
-- [Popular tasks](#popular-tasks)
+- [Popular tasks](./docs/popular-tasks.md)
 
 ### Troubleshooting
 
 Head over to the [troubleshooting](docs/troubleshooting.md) guide if you're
 having issues.
-
-## Popular tasks
-
-### Explore a new codebase
-
-Start by `cd`ing into an existing or newly-cloned repository and running `grok-cli`.
-
-```text
-> Describe the main pieces of this system's architecture.
-```
-
-```text
-> What security mechanisms are in place?
-```
-
-### Work with your existing code
-
-```text
-> Implement a first draft for GitHub issue #123.
-```
-
-```text
-> Help me migrate this codebase to the latest version of Java. Start with a plan.
-```
-
-### Automate your workflows
-
-Use MCP servers to integrate your local system tools with your enterprise collaboration suite.
-
-```text
-> Make me a slide deck showing the git history from the last 7 days, grouped by feature and team member.
-```
-
-```text
-> Make a full-screen web app for a wall display to show our most interacted-with GitHub issues.
-```
-
-### Interact with your system
-
-```text
-> Convert all the images in this directory to png, and rename them to use dates from the exif data.
-```
-
-```text
-> Organise my PDF invoices by month of expenditure.
-```
 
 ## License
 

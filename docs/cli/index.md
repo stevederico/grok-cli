@@ -7,6 +7,7 @@ Within Grok CLI, `packages/cli` is the frontend for users to send and receive pr
 - **[Authentication](./authentication.md):** A guide to setting up authentication with Google's AI services.
 - **[Commands](./commands.md):** A reference for Grok CLI commands (e.g., `/help`, `/tools`, `/theme`).
 - **[Configuration](./configuration.md):** A guide to tailoring Grok CLI behavior using configuration files.
+- **[Popular Tasks](../popular-tasks.md):** A guide to performing popular tasks with Grok CLI.
 - **[Token Caching](./token-caching.md):** Optimize API costs through token caching.
 - **[Themes](./themes.md)**: A guide to customizing the CLI's appearance with different themes.
 - **[Tutorials](tutorials.md)**: A tutorial showing how to use Grok CLI to automate a development task.

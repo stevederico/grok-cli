@@ -1,6 +1,8 @@
 # @stevederico/grok-cli
 
-<img width="1034" alt="Screenshot 2025-06-28 at 2 29 22 PM" src="https://github.com/user-attachments/assets/c7bf330e-f4c8-45ba-afe4-7534adf74d82" />
+<img width="719" height="432" alt="Screenshot 2025-07-16 at 1 13 58 PM" src="https://github.com/user-attachments/assets/cd174977-c5cc-4f00-8dbd-3dde6697b7d8" />
+
+
 
 
 Grok CLI is an open-source interactive CLI tool that provides a flexible and powerful interface for AI-assisted workflows.

@@ -12,12 +12,13 @@ import {
   Config,
   ConfigParameters,
   ContentGeneratorConfig,
+  AuthType,
 } from '../core/index.js';
 
 const TEST_CONTENT_GENERATOR_CONFIG: ContentGeneratorConfig = {
+  authType: AuthType.LOCAL,
   apiKey: 'test-key',
   model: 'test-model',
-  userAgent: 'test-agent',
 };
 
 // Mock file discovery service and tool registry

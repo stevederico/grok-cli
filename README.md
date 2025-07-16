@@ -29,6 +29,7 @@ You can start a project from a new directory:
 
 ```sh
 cd new-project
+grok-cli
 > Write me a Discord bot that answers questions using a FAQ.md file I will provide
 ```
 

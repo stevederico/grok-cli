@@ -471,7 +471,18 @@ export const useProviderStream = (
           
           // Schedule tool calls
           const toolCallRequests: ToolCallRequestInfo[] = response.tool_calls.map(toolCall => {
-            const args = JSON.parse(toolCall.function.arguments);
+            // Handle arguments that might be objects or JSON strings
+            let args: any;
+            try {
+              args = typeof toolCall.function.arguments === 'string' 
+                ? JSON.parse(toolCall.function.arguments)
+                : toolCall.function.arguments;
+            } catch (error) {
+              console.error(`[DEBUG] Interactive UI - Failed to parse tool arguments:`, error);
+              console.error(`[DEBUG] Interactive UI - Arguments:`, toolCall.function.arguments);
+              args = {};
+            }
+            
             return {
               toolName: toolCall.function.name,
               parameters: args,

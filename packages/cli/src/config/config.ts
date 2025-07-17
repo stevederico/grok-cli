@@ -136,7 +136,7 @@ export async function loadHierarchicalMemory(
   debugMode: boolean,
   fileService: FileDiscoveryService,
   extensionContextFilePaths: string[] = [],
-): Promise<{ memoryContent: string; fileCount: number }> {
+): Promise<{ memoryContent: string; fileCount: number; filePaths: string[] }> {
   if (debugMode) {
     logger.debug(
       `CLI: Delegating hierarchical memory load to server for CWD: ${currentWorkingDirectory}`,
@@ -187,7 +187,7 @@ export async function loadCliConfig(
 
   const fileService = new FileDiscoveryService(process.cwd());
   // Call the (now wrapper) loadHierarchicalMemory which calls the server's version
-  const { memoryContent, fileCount } = await loadHierarchicalMemory(
+  const { memoryContent, fileCount, filePaths } = await loadHierarchicalMemory(
     process.cwd(),
     debugMode,
     fileService,
@@ -219,6 +219,7 @@ export async function loadCliConfig(
     mcpServers,
     userMemory: memoryContent,
     geminiMdFileCount: fileCount,
+    geminiMdFilePaths: filePaths,
     approvalMode: argv.yolo || false ? ApprovalMode.YOLO : ApprovalMode.DEFAULT,
     showMemoryUsage:
       argv.show_memory_usage || settings.showMemoryUsage || false,

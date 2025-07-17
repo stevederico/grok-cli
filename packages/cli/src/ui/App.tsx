@@ -117,6 +117,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
   }, [setStaticKey, stdout]);
 
   const [contextMdFileCount, setContextMdFileCount] = useState<number>(0);
+  const [contextFilePaths, setContextFilePaths] = useState<string[]>([]);
   const [debugMessage, setDebugMessage] = useState<string>('');
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [themeError, setThemeError] = useState<string | null>(null);
@@ -201,7 +202,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       Date.now(),
     );
     try {
-      const { memoryContent, fileCount } = await loadHierarchicalMemory(
+      const { memoryContent, fileCount, filePaths } = await loadHierarchicalMemory(
         process.cwd(),
         config.getDebugMode(),
         config.getFileService(),
@@ -209,7 +210,9 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       );
       config.setUserMemory(memoryContent);
       config.setGeminiMdFileCount(fileCount);
+      config.setGeminiMdFilePaths(filePaths);
       setContextMdFileCount(fileCount);
+      setContextFilePaths(filePaths);
 
       addItem(
         {
@@ -408,6 +411,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
   useEffect(() => {
     if (config) {
       setContextMdFileCount(config.getGeminiMdFileCount());
+      setContextFilePaths(config.getGeminiMdFilePaths());
     }
   }, [config]);
 
@@ -783,6 +787,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                     <ContextSummaryDisplay
                       contextMdFileCount={contextMdFileCount}
                       contextFileNames={contextFileNames}
+                      contextFilePaths={contextFilePaths}
                       mcpServers={config.getMcpServers()}
                       showToolDescriptions={showToolDescriptions}
                     />
@@ -863,6 +868,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
           )}
           <Footer
             model={currentModel}
+            provider={config?.getProvider()}
             targetDir={config.getTargetDir()}
             debugMode={config.getDebugMode()}
             branchName={branchName}

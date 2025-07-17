@@ -16,6 +16,7 @@ import { BUILD_NUMBER } from '../../generated/build-info.js';
 
 interface FooterProps {
   model: string;
+  provider?: string;
   targetDir: string;
   branchName?: string;
   debugMode: boolean;
@@ -32,6 +33,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({
   model,
+  provider,
   targetDir,
   branchName,
   debugMode,
@@ -100,7 +102,7 @@ export const Footer: React.FC<FooterProps> = ({
       <Box alignItems="center">
         <Text color={Colors.AccentBlue}>
           {' '}
-          {model}{' '}
+          {provider && provider.trim() ? `${provider}:${model}` : model}{' '}
           <Text color={Colors.Gray}>
             ({((1 - percentage) * 100).toFixed(0)}% context left)
           </Text>

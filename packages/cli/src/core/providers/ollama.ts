@@ -96,10 +96,138 @@ export class OllamaProvider extends Provider {
   }
 
   async queryWithTools(prompt: string, tools: any[], options: QueryOptions = {}): Promise<any> {
-    // Ollama doesn't support OpenAI-style tool calling
-    // Fall back to basic query and return simple response
-    const response = await this.query(prompt, options);
-    return { content: response };
+    const model = options.model || this.model;
+    const temperature = options.temperature || 0.7;
+
+    try {
+      // Use OpenAI-compatible chat endpoint for tool calling
+      const messages: any[] = [
+        { role: 'user', content: prompt }
+      ];
+
+      // Handle tool results continuation (like XAI provider)
+      if (options.tool_results && options.tool_results.length > 0) {
+        // Add the previous assistant message with tool calls if available
+        const prevResponse = (options as any).previous_assistant_response;
+        if (prevResponse?.tool_calls) {
+          const assistantMessage = {
+            role: 'assistant',
+            content: prevResponse.content || null,
+            tool_calls: prevResponse.tool_calls.map((tc: any) => ({
+              id: tc.id,
+              type: tc.type,
+              function: {
+                name: tc.function.name,
+                // Parse arguments back to object for Ollama's continuation format
+                arguments: typeof tc.function.arguments === 'string' 
+                  ? JSON.parse(tc.function.arguments)
+                  : tc.function.arguments
+              }
+            }))
+          };
+          messages.push(assistantMessage);
+        }
+        
+        // Add the tool results - try Ollama's expected format
+        const toolMessages = options.tool_results.map((r: { content: string; tool_call_id: string }) => ({ 
+          role: 'tool', 
+          content: r.content,
+          tool_call_id: r.tool_call_id
+        }));
+        messages.push(...toolMessages);
+      }
+
+      const requestBody: any = {
+        model,
+        messages,
+        temperature,
+        max_tokens: options.maxTokens || 2048,
+        stream: false
+      };
+
+      // Add tools if provided
+      if (tools && tools.length > 0) {
+        requestBody.tools = tools.map(tool => ({
+          type: 'function',
+          function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.parameters || {}
+          }
+        }));
+      }
+
+      const response = await fetch(`${this.endpoint}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(60000), // 60 second timeout - increased for tool processing
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Fall back to basic query if chat endpoint or model doesn't support tools
+          console.warn(`Ollama chat endpoint not available or model doesn't support tools. Falling back to basic query.`);
+          const basicResponse = await this.query(prompt, options);
+          return { content: basicResponse };
+        }
+        
+        // Try to get the error details from the response
+        let errorMessage = `${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          console.error(`🔍 Ollama - Error response:`, errorData);
+          if (errorData.error) {
+            errorMessage += `: ${errorData.error}`;
+          }
+        } catch {
+          // If we can't parse the error response, just use the status
+        }
+        
+        throw new Error(`Ollama API error: ${errorMessage}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.message) {
+        const message = data.message;
+        
+        // Check for tool calls
+        if (message.tool_calls && Array.isArray(message.tool_calls)) {
+          const toolCalls = message.tool_calls.map((call: any) => ({
+            id: call.id || `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            function: {
+              name: call.function.name,
+              // Ensure arguments is always a JSON string
+              arguments: typeof call.function.arguments === 'string' 
+                ? call.function.arguments 
+                : JSON.stringify(call.function.arguments),
+            },
+            type: 'function',
+          }));
+          return {
+            content: message.content,
+            tool_calls: toolCalls,
+          };
+        }
+        
+        return { content: message.content };
+      }
+      
+      throw new Error('Unexpected response format from Ollama API');
+    } catch (error) {
+      // If chat endpoint fails, fall back to basic query
+      if (error instanceof Error && error.message.includes('404')) {
+        console.warn(`Ollama chat endpoint not available. Falling back to basic query.`);
+        const basicResponse = await this.query(prompt, options);
+        return { content: basicResponse };
+      }
+      
+      console.error(`💥 Ollama - Query with tools failed:`, error);
+      throw new Error(`Ollama query with tools failed: ${(error as Error).message}`);
+    }
   }
 }
 

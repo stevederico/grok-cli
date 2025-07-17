@@ -1,6 +1,11 @@
 /**
- * @license
- * Copyright 2025 @stevederico/grok-cli Contributors
+ * @licinterface ContextSummaryDisplayProps {
+  contextMdFileCount: number;
+  contextFileNames: string[];
+  contextFilePaths: string[];
+  mcpServers?: Record<string, MCPServerConfig>;
+  showToolDescriptions: boolean;
+}* Copyright 2025 @stevederico/grok-cli Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +17,7 @@ import { type MCPServerConfig } from '../../core/index.js';
 interface ContextSummaryDisplayProps {
   contextMdFileCount: number;
   contextFileNames: string[];
+  contextFilePaths: string[];
   mcpServers?: Record<string, MCPServerConfig>;
   showToolDescriptions?: boolean;
 }
@@ -19,6 +25,7 @@ interface ContextSummaryDisplayProps {
 export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
   contextMdFileCount,
   contextFileNames,
+  contextFilePaths,
   mcpServers,
   showToolDescriptions,
 }) => {
@@ -32,11 +39,26 @@ export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
     if (contextMdFileCount === 0) {
       return '';
     }
-    const allNamesTheSame = new Set(contextFileNames).size < 2;
-    const name = allNamesTheSame ? contextFileNames[0] : 'context';
-    return `${contextMdFileCount} ${name} file${
-      contextMdFileCount > 1 ? 's' : ''
-    }`;
+    
+    if (contextFilePaths && contextFilePaths.length > 0) {
+      // Show file paths when available
+      if (contextFilePaths.length === 1) {
+        return `1 ${contextFilePaths[0]}`;
+      } else {
+        return `${contextMdFileCount} context files: ${contextFilePaths.join(', ')}`;
+      }
+    }
+    
+    // Fallback to original logic only if we actually have files
+    if (contextMdFileCount > 0) {
+      const allNamesTheSame = new Set(contextFileNames).size < 2;
+      const name = allNamesTheSame ? contextFileNames[0] : 'context';
+      return `${contextMdFileCount} ${name} file${
+        contextMdFileCount > 1 ? 's' : ''
+      }`;
+    }
+    
+    return '';
   })();
 
   const mcpText =

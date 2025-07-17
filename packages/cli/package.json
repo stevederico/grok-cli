@@ -1,6 +1,6 @@
 {
   "name": "@stevederico/grok-cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Grok CLI - Universal LLM CLI",
   "keywords": ["cli", "ai", "grok", "llm", "xai", "ollama", "interactive"],
   "homepage": "https://github.com/stevederico/grok-cli#readme",

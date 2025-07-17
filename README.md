@@ -7,7 +7,7 @@ Grok CLI is an open-source interactive CLI tool that provides a flexible and pow
 
 ```bash
 npm i -g @stevederico/grok-cli
-grok-cli
+grok
 ```
 
 ## Environment Variables
@@ -29,7 +29,7 @@ You can start a project from a new directory:
 
 ```sh
 cd new-project
-grok-cli
+grok
 > Write me a Discord bot that answers questions using a FAQ.md file I will provide
 ```
 
@@ -38,7 +38,7 @@ Or work with an existing project:
 ```sh
 git clone https://github.com/stevederico/skateboard
 cd skateboard
-grok-cli
+grok
 > Give me a summary of all of the changes that went in yesterday
 ```
 

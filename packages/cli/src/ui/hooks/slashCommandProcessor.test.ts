@@ -69,6 +69,7 @@ import {
   getMCPServerStatus,
   GeminiClient,
 } from '../../core/index.js';
+// @ts-expect-error - TSX import works at runtime despite TypeScript language server warning
 import { useSessionStats } from '../contexts/SessionContext.js';
 import { LoadedSettings } from '../../config/settings.js';
 import * as ShowMemoryCommandModule from './useShowMemoryCommand.js';
@@ -97,6 +98,7 @@ describe('useSlashCommandProcessor', () => {
   let mockOpenThemeDialog: ReturnType<typeof vi.fn>;
   let mockOpenAuthDialog: ReturnType<typeof vi.fn>;
   let mockOpenEditorDialog: ReturnType<typeof vi.fn>;
+  let mockOpenModelDialog: ReturnType<typeof vi.fn>;
   let mockPerformMemoryRefresh: ReturnType<typeof vi.fn>;
   let mockSetQuittingMessages: ReturnType<typeof vi.fn>;
   let mockGeminiClient: GeminiClient;
@@ -114,6 +116,7 @@ describe('useSlashCommandProcessor', () => {
     mockOpenThemeDialog = vi.fn();
     mockOpenAuthDialog = vi.fn();
     mockOpenEditorDialog = vi.fn();
+    mockOpenModelDialog = vi.fn();
     mockPerformMemoryRefresh = vi.fn().mockResolvedValue(undefined);
     mockSetQuittingMessages = vi.fn();
     mockGeminiClient = {
@@ -167,13 +170,14 @@ describe('useSlashCommandProcessor', () => {
         mockRefreshStatic,
         mockSetShowHelp,
         mockOnDebugMessage,
-        mockOpenThemeDialog,
-        mockOpenAuthDialog,
         mockOpenEditorDialog,
         mockPerformMemoryRefresh,
         mockCorgiMode,
         showToolDescriptions,
         mockSetQuittingMessages,
+        vi.fn(), // openPrivacyNotice
+        vi.fn(), // openProviderDialog
+        mockOpenModelDialog,
       ),
     );
   };
@@ -342,11 +346,16 @@ describe('useSlashCommandProcessor', () => {
       vi.mocked(mockConfig.getModel).mockReturnValue('test-model-from-config');
 
       const settings = {
+        user: { settings: {}, errors: [] },
+        workspace: { settings: {}, errors: [] },
+        errors: [],
         merged: {
           selectedAuthType: 'test-auth-type',
           contextFileName: 'GROKCLI.md',
         },
-      } as LoadedSettings;
+        forScope: vi.fn(),
+        computeMergedSettings: vi.fn(),
+      } as unknown as LoadedSettings;
 
       const { result } = renderHook(() =>
         useSlashCommandProcessor(
@@ -359,13 +368,14 @@ describe('useSlashCommandProcessor', () => {
           mockRefreshStatic,
           mockSetShowHelp,
           mockOnDebugMessage,
-          mockOpenThemeDialog,
-          mockOpenAuthDialog,
           mockOpenEditorDialog,
           mockPerformMemoryRefresh,
           mockCorgiMode,
           false,
           mockSetQuittingMessages,
+          vi.fn(), // openPrivacyNotice
+          vi.fn(), // openProviderDialog
+          mockOpenModelDialog,
         ),
       );
 
@@ -771,7 +781,7 @@ describe('useSlashCommandProcessor', () => {
       vi.mock('@grok-cli/core', async (importOriginal) => {
         const actual = await importOriginal();
         return {
-          ...actual,
+          ...(actual as Record<string, unknown>),
           MCPServerStatus: {
             CONNECTED: 'connected',
             CONNECTING: 'connecting',
@@ -1041,7 +1051,7 @@ describe('useSlashCommandProcessor', () => {
       // Mock tools from each server - server2 has no tools
       const mockServer1Tools = [{ name: 'server1_tool1' }];
 
-      const mockServer2Tools = [];
+      const mockServer2Tools: Array<{ name: string }> = [];
 
       const mockGetToolsByServer = vi.fn().mockImplementation((serverName) => {
         if (serverName === 'server1') return mockServer1Tools;

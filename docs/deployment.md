@@ -19,13 +19,13 @@ This is the recommended way for end-users to install Grok CLI. It involves downl
   npm install -g @stevederico/grok-cli
 
   # Now you can run the CLI from anywhere
-  grok-cli
+  grok
   ```
 
 - **NPX execution:**
   ```bash
   # Execute the latest version from NPM without a global install
-  npx grok-cli
+  npx @stevederico/grok-cli
   ```
 
 ---
@@ -43,7 +43,7 @@ For security and isolation, Grok CLI can be run inside a container. This is the 
 - **Using the `--sandbox` flag:**
   If you have Grok CLI installed locally (using the standard installation described above), you can instruct it to run inside the sandbox container.
   ```bash
-  grok-cli --sandbox "your prompt here"
+  grok --sandbox "your prompt here"
   ```
 
 ---
@@ -65,8 +65,8 @@ Contributors to the project will want to run the CLI directly from the source co
   # Link the local cli package to your global node_modules
   npm link packages/cli
 
-  # Now you can run your local version using the `grok-cli` command
-  grok-cli
+  # Now you can run your local version using the `grok` command
+  grok
   ```
 
 ---

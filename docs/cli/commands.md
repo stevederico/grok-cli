@@ -70,9 +70,26 @@ Slash commands provide meta-level control over the CLI itself.
   - **Usage:** `/restore [tool_call_id]`
   - **Note:** Only available if the CLI is invoked with the `--checkpointing` option or configured via [settings](./configuration.md). See [Checkpointing documentation](../checkpointing.md) for more details.
 
+- **`/provider`**
+
+  - **Description:** Manage the active AI provider.
+  - **Sub-commands:**
+    - **`list`**: List all available providers and their status.
+    - **`current`**: Show the currently active provider.
+    - **`set <name>`**: Switch to a specific provider (e.g., `/provider set ollama`).
+  - **Note:** Running `/provider` with no sub-command opens an interactive selection dialog with keyboard navigation (↑↓, Enter, ESC).
+
+- **`/model`**
+
+  - **Description:** Manage the active AI model.
+  - **Sub-commands:**
+    - **`list`**: List available models for the current provider.
+    - **`set <model>`**: Switch to a specific model (e.g., `/model set grok-4-0709`).
+  - **Note:** Running `/model` with no sub-command opens an interactive selection dialog.
+
 - **`/stats`**
 
-  - **Description:** Display detailed statistics for the current Grok CLI session, including token usage, cached token savings (when available), and session duration. Note: Cached token information is only displayed when cached tokens are being used, which occurs with API key authentication but not with OAuth authentication at this time.
+  - **Description:** Display detailed statistics for the current Grok CLI session, including token usage, cached token savings (when available), and session duration.
 
 - [**`/theme`**](./themes.md)
 

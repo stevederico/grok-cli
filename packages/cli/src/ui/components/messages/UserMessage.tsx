@@ -13,16 +13,16 @@ interface UserMessageProps {
 }
 
 export const UserMessage: React.FC<UserMessageProps> = ({ text }) => {
-  const prefix = '> ';
-  const prefixWidth = prefix.length;
+  const prefix = '❯ ';
+  const prefixWidth = 2;
 
   return (
     <Box flexDirection="row" marginY={1}>
       <Box width={prefixWidth}>
-        <Text color={Colors.Gray}>{prefix}</Text>
+        <Text color={Colors.AccentCyan} bold>{prefix}</Text>
       </Box>
       <Box flexGrow={1}>
-        <Text wrap="wrap" color={Colors.Gray}>
+        <Text wrap="wrap" color={Colors.Foreground} bold>
           {text}
         </Text>
       </Box>

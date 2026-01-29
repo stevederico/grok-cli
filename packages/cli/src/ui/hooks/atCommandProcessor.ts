@@ -6,7 +6,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { PartListUnion, PartUnion } from '../../core/__stubs__/google-genai.js';
+import { PartListUnion, PartUnion } from '../../core/__stubs__/types.js';
 import {
   Config,
   getErrorMessage,

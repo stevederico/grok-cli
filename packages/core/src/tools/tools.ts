@@ -34,7 +34,7 @@ export interface Tool<
   description: string;
 
   /**
-   * Function declaration schema from @google/genai
+   * Function declaration schema
    */
   schema: FunctionDeclaration;
 

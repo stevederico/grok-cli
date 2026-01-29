@@ -29,7 +29,20 @@ export interface ProviderToolCall {
 export interface ToolCallResponse {
   content?: string;
   tool_calls?: ProviderToolCall[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
+
+export interface StreamChunk {
+  type: 'content' | 'tool_call_delta' | 'done';
+  content?: string;
+  tool_call?: Partial<ProviderToolCall>;
+}
+
+export type StreamCallback = (chunk: StreamChunk) => void;
 
 export abstract class Provider {
   public readonly name: string;
@@ -52,6 +65,25 @@ export abstract class Provider {
   async queryWithTools(prompt: string, _tools: any[], options?: QueryOptions): Promise<ToolCallResponse> {
     const response = await this.query(prompt, options);
     return { content: response };
+  }
+
+  /**
+   * Streaming version of queryWithTools. Fires onChunk per token/delta.
+   * Default implementation falls back to non-streaming queryWithTools.
+   */
+  async queryWithToolsStreaming(
+    prompt: string,
+    tools: any[],
+    options: QueryOptions,
+    onChunk: StreamCallback,
+    signal?: AbortSignal,
+  ): Promise<ToolCallResponse> {
+    const response = await this.queryWithTools(prompt, tools, options);
+    if (response.content) {
+      onChunk({ type: 'content', content: response.content });
+    }
+    onChunk({ type: 'done' });
+    return response;
   }
 
   /**

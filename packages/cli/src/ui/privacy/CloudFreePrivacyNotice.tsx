@@ -47,38 +47,34 @@ export const CloudFreePrivacyNotice = ({
   return (
     <Box flexDirection="column" marginY={1}>
       <Text bold color={Colors.AccentPurple}>
-        Gemini Code Assist for Individuals Privacy Notice
+        Grok CLI Privacy Notice
       </Text>
       <Newline />
       <Text>
-        This notice and our Privacy Policy
-        <Text color={Colors.AccentBlue}>[1]</Text> describe how Gemini Code
-        Assist handles your data. Please read them carefully.
+        This notice describes how Grok CLI handles your data. Please read it
+        carefully.
       </Text>
       <Newline />
       <Text>
-        When you use Gemini Code Assist for individuals with GrokCLI, Google
-        collects your prompts, related code, generated output, code edits,
-        related feature usage information, and your feedback to provide,
-        improve, and develop Google products and services and machine learning
-        technologies.
+        When you use Grok CLI, xAI collects your prompts, related code,
+        generated output, code edits, related feature usage information, and
+        your feedback to provide, improve, and develop xAI products and
+        services and machine learning technologies.
       </Text>
       <Newline />
       <Text>
         To help with quality and improve our products (such as generative
         machine-learning models), human reviewers may read, annotate, and
         process the data collected above. We take steps to protect your privacy
-        as part of this process. This includes disconnecting the data from your
-        Google Account before reviewers see or annotate it, and storing those
-        disconnected copies for up to 18 months. Please don&apos;t submit
-        confidential information or any data you wouldn&apos;t want a reviewer
-        to see or Google to use to improve our products, services and
-        machine-learning technologies.
+        as part of this process. Please don&apos;t submit confidential
+        information or any data you wouldn&apos;t want a reviewer to see or
+        xAI to use to improve our products, services and machine-learning
+        technologies.
       </Text>
       <Newline />
       <Box flexDirection="column">
         <Text>
-          Allow Google to use this data to develop and improve our products?
+          Allow xAI to use this data to develop and improve our products?
         </Text>
         <RadioButtonSelect
           items={items}
@@ -92,11 +88,6 @@ export const CloudFreePrivacyNotice = ({
           }}
         />
       </Box>
-      <Newline />
-      <Text>
-        <Text color={Colors.AccentBlue}>[1]</Text>{' '}
-        https://policies.google.com/privacy
-      </Text>
       <Newline />
       <Text color={Colors.Gray}>Press Enter to choose an option and exit.</Text>
     </Box>

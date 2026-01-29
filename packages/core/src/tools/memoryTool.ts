@@ -77,10 +77,9 @@ export function getAllContextMdFilenames(): string[] {
   return [currentContextMdFilename];
 }
 
-// Legacy function names for backward compatibility
-export const setGeminiMdFilename = setContextMdFilename;
-export const getCurrentGeminiMdFilename = getCurrentContextMdFilename;
-export const getAllGeminiMdFilenames = getAllContextMdFilenames;
+export const setGrokMdFilename = setContextMdFilename;
+export const getCurrentGrokMdFilename = getCurrentContextMdFilename;
+export const getAllGrokMdFilenames = getAllContextMdFilenames;
 
 interface SaveMemoryParams {
   fact: string;

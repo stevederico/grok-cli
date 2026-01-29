@@ -11,7 +11,7 @@ import { homedir } from 'os';
 import { bfsFileSearch } from './bfsFileSearch.js';
 import {
   GROKCLI_CONFIG_DIR,
-  getAllGeminiMdFilenames,
+  getAllGrokMdFilenames,
 } from '../tools/memoryTool.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 
@@ -30,7 +30,7 @@ const logger = {
 
 const MAX_DIRECTORIES_TO_SCAN_FOR_MEMORY = 200;
 
-interface GeminiFileContent {
+interface GrokFileContent {
   filePath: string;
   content: string | null;
 }
@@ -78,7 +78,7 @@ async function findProjectRoot(startDir: string): Promise<string | null> {
   }
 }
 
-async function getGeminiMdFilePathsInternal(
+async function getGrokMdFilePathsInternal(
   currentWorkingDirectory: string,
   userHomePath: string,
   debugMode: boolean,
@@ -86,20 +86,20 @@ async function getGeminiMdFilePathsInternal(
   extensionContextFilePaths: string[] = [],
 ): Promise<string[]> {
   const allPaths = new Set<string>();
-  const geminiMdFilenames = getAllGeminiMdFilenames();
+  const grokMdFilenames = getAllGrokMdFilenames();
 
-  for (const geminiMdFilename of geminiMdFilenames) {
+  for (const grokMdFilename of grokMdFilenames) {
     const resolvedCwd = path.resolve(currentWorkingDirectory);
     const resolvedHome = path.resolve(userHomePath);
     const globalMemoryPath = path.join(
       resolvedHome,
       GROKCLI_CONFIG_DIR,
-      geminiMdFilename,
+      grokMdFilename,
     );
 
     if (debugMode)
       logger.debug(
-        `Searching for ${geminiMdFilename} starting from CWD: ${resolvedCwd}`,
+        `Searching for ${grokMdFilename} starting from CWD: ${resolvedCwd}`,
       );
     if (debugMode) logger.debug(`User home directory: ${resolvedHome}`);
 
@@ -108,12 +108,12 @@ async function getGeminiMdFilePathsInternal(
       allPaths.add(globalMemoryPath);
       if (debugMode)
         logger.debug(
-          `Found readable global ${geminiMdFilename}: ${globalMemoryPath}`,
+          `Found readable global ${grokMdFilename}: ${globalMemoryPath}`,
         );
     } catch {
       if (debugMode)
         logger.debug(
-          `Global ${geminiMdFilename} not found or not readable: ${globalMemoryPath}`,
+          `Global ${grokMdFilename} not found or not readable: ${globalMemoryPath}`,
         );
     }
 
@@ -132,7 +132,7 @@ async function getGeminiMdFilePathsInternal(
       // Loop until filesystem root or currentDir is empty
       if (debugMode) {
         logger.debug(
-          `Checking for ${geminiMdFilename} in (upward scan): ${currentDir}`,
+          `Checking for ${grokMdFilename} in (upward scan): ${currentDir}`,
         );
       }
 
@@ -147,7 +147,7 @@ async function getGeminiMdFilePathsInternal(
         break;
       }
 
-      const potentialPath = path.join(currentDir, geminiMdFilename);
+      const potentialPath = path.join(currentDir, grokMdFilename);
       try {
         await fs.access(potentialPath, fsSync.constants.R_OK);
         // Add to upwardPaths only if it's not the already added globalMemoryPath
@@ -155,14 +155,14 @@ async function getGeminiMdFilePathsInternal(
           upwardPaths.unshift(potentialPath);
           if (debugMode) {
             logger.debug(
-              `Found readable upward ${geminiMdFilename}: ${potentialPath}`,
+              `Found readable upward ${grokMdFilename}: ${potentialPath}`,
             );
           }
         }
       } catch {
         if (debugMode) {
           logger.debug(
-            `Upward ${geminiMdFilename} not found or not readable in: ${currentDir}`,
+            `Upward ${grokMdFilename} not found or not readable in: ${currentDir}`,
           );
         }
       }
@@ -181,7 +181,7 @@ async function getGeminiMdFilePathsInternal(
     upwardPaths.forEach((p) => allPaths.add(p));
 
     const downwardPaths = await bfsFileSearch(resolvedCwd, {
-      fileName: geminiMdFilename,
+      fileName: grokMdFilename,
       maxDirs: MAX_DIRECTORIES_TO_SCAN_FOR_MEMORY,
       debug: debugMode,
       fileService,
@@ -189,7 +189,7 @@ async function getGeminiMdFilePathsInternal(
     downwardPaths.sort(); // Sort for consistent ordering, though hierarchy might be more complex
     if (debugMode && downwardPaths.length > 0)
       logger.debug(
-        `Found downward ${geminiMdFilename} files (sorted): ${JSON.stringify(
+        `Found downward ${grokMdFilename} files (sorted): ${JSON.stringify(
           downwardPaths,
         )}`,
       );
@@ -208,18 +208,18 @@ async function getGeminiMdFilePathsInternal(
 
   if (debugMode)
     logger.debug(
-      `Final ordered ${getAllGeminiMdFilenames()} paths to read: ${JSON.stringify(
+      `Final ordered ${getAllGrokMdFilenames()} paths to read: ${JSON.stringify(
         finalPaths,
       )}`,
     );
   return finalPaths;
 }
 
-async function readGeminiMdFiles(
+async function readGrokMdFiles(
   filePaths: string[],
   debugMode: boolean,
-): Promise<GeminiFileContent[]> {
-  const results: GeminiFileContent[] = [];
+): Promise<GrokFileContent[]> {
+  const results: GrokFileContent[] = [];
   for (const filePath of filePaths) {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
@@ -233,7 +233,7 @@ async function readGeminiMdFiles(
       if (!isTestEnv) {
         const message = error instanceof Error ? error.message : String(error);
         logger.warn(
-          `Warning: Could not read ${getAllGeminiMdFilenames()} file at ${filePath}. Error: ${message}`,
+          `Warning: Could not read ${getAllGrokMdFilenames()} file at ${filePath}. Error: ${message}`,
         );
       }
       results.push({ filePath, content: null }); // Still include it with null content
@@ -244,7 +244,7 @@ async function readGeminiMdFiles(
 }
 
 function concatenateInstructions(
-  instructionContents: GeminiFileContent[],
+  instructionContents: GrokFileContent[],
   // CWD is needed to resolve relative paths for display markers
   currentWorkingDirectoryForDisplay: string,
 ): string {
@@ -281,7 +281,7 @@ export async function loadServerHierarchicalMemory(
   // For the server, homedir() refers to the server process's home.
   // This is consistent with how MemoryTool already finds the global path.
   const userHomePath = homedir();
-  const filePaths = await getGeminiMdFilePathsInternal(
+  const filePaths = await getGrokMdFilePathsInternal(
     currentWorkingDirectory,
     userHomePath,
     debugMode,
@@ -292,7 +292,7 @@ export async function loadServerHierarchicalMemory(
     if (debugMode) logger.debug('No GROKCLI.md files found in hierarchy.');
     return { memoryContent: '', fileCount: 0 };
   }
-  const contentsWithPaths = await readGeminiMdFiles(filePaths, debugMode);
+  const contentsWithPaths = await readGrokMdFiles(filePaths, debugMode);
   // Pass CWD for relative path display in concatenated content
   const combinedInstructions = concatenateInstructions(
     contentsWithPaths,

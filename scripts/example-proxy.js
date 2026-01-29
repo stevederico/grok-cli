@@ -7,7 +7,7 @@
  */
 
 // Example proxy server that listens on :::8877 and only allows HTTPS connections to example.com.
-// Set `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` to run proxy alongside sandbox
+// Set `GROK_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` to run proxy alongside sandbox
 // Test via `curl https://example.com` inside sandbox (in shell mode or via shell tool)
 
 import http from 'http';
@@ -16,7 +16,7 @@ import { URL } from 'url';
 import console from 'console';
 
 const PROXY_PORT = 8877;
-const ALLOWED_DOMAINS = ['example.com', 'googleapis.com'];
+const ALLOWED_DOMAINS = ['example.com', 'api.x.ai'];
 const ALLOWED_PORT = '443';
 
 const server = http.createServer((req, res) => {

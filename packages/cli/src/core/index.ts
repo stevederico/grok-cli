@@ -16,7 +16,7 @@ export * from './query.js';
 
 // Export config
 export * from './config/config.js';
-export { DEFAULT_GEMINI_MODEL, DEFAULT_GEMINI_FLASH_MODEL, DEFAULT_GEMINI_EMBEDDING_MODEL } from './config/models.js';
+export { DEFAULT_GROK_MODEL, DEFAULT_GROK_FLASH_MODEL, DEFAULT_GROK_EMBEDDING_MODEL } from './config/models.js';
 
 // Export Core Logic
 export * from './core/types.js';

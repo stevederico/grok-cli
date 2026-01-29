@@ -5,6 +5,13 @@
  */
 
 import { DefaultDark } from './default.js';
+import { DefaultLight } from './default-light.js';
+import { Dracula } from './dracula.js';
+import { Nord } from './nord.js';
+import { Monokai } from './monokai.js';
+import { SolarizedDark } from './solarized-dark.js';
+import { SolarizedLight } from './solarized-light.js';
+import { CatppuccinMocha } from './catppuccin.js';
 import { Theme, ThemeType } from './theme.js';
 import { LightTheme as NoColorLightTheme, DarkTheme as NoColorDarkTheme } from './no-color.js';
 import process from 'node:process';
@@ -23,6 +30,13 @@ class ThemeManager {
   constructor() {
     this.availableThemes = [
       DefaultDark,
+      DefaultLight,
+      Dracula,
+      Nord,
+      Monokai,
+      SolarizedDark,
+      SolarizedLight,
+      CatppuccinMocha,
     ];
     this.activeTheme = DEFAULT_THEME;
   }

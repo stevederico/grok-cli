@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Box } from 'ink';
+import { Box, Text } from 'ink';
 import { IndividualToolCallDisplay, ToolCallStatus } from '../../types.js';
 import { ToolMessage } from './ToolMessage.js';
 import { ToolConfirmationMessage } from './ToolConfirmationMessage.js';
@@ -63,6 +63,12 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
       )
     : undefined;
 
+  const completedCount = toolCalls.filter(
+    (t) => t.status === ToolCallStatus.Success || t.status === ToolCallStatus.Error || t.status === ToolCallStatus.Canceled
+  ).length;
+  const totalCount = toolCalls.length;
+  const allDone = completedCount === totalCount;
+
   return (
     <Box
       flexDirection="column"
@@ -78,6 +84,11 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
       borderDimColor={hasPending}
       borderColor={borderColor}
     >
+      <Box paddingX={1}>
+        <Text color={allDone ? Colors.AccentGreen : Colors.AccentYellow} bold>
+          Tools ({completedCount}/{totalCount} complete)
+        </Text>
+      </Box>
       {toolCalls.map((tool) => {
         const isConfirming = toolAwaitingApproval?.callId === tool.callId;
         return (

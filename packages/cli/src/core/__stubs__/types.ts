@@ -5,7 +5,7 @@
  */
 
 // Minimal type stubs for compatibility with existing code
-// These types are no longer used with Google/Gemini providers but are kept for backwards compatibility
+// Minimal type stubs for provider compatibility
 
 export interface GenerateContentResponseUsageMetadata {
   promptTokenCount?: number;

@@ -11,7 +11,7 @@ import {
   ToolConfirmationOutcome,
   ToolMcpConfirmationDetails,
 } from './tools.js';
-import { CallableTool, Part, FunctionCall } from '../__stubs__/google-genai.js';
+import { CallableTool, Part, FunctionCall } from '../__stubs__/types.js';
 
 type ToolParams = Record<string, unknown>;
 

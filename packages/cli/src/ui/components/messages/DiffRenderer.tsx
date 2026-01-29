@@ -128,6 +128,10 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
       line.content.startsWith('new file mode'),
   );
 
+  // Count additions and deletions for the header
+  const addCount = parsedLines.filter((l) => l.type === 'add').length;
+  const delCount = parsedLines.filter((l) => l.type === 'del').length;
+
   let renderedOutput;
 
   if (isNewFile) {
@@ -157,7 +161,21 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
     );
   }
 
-  return renderedOutput;
+  // File header bar
+  const fileLabel = filename || 'unknown';
+  const changeType = isNewFile ? 'new file' : 'modified';
+  const statsStr = isNewFile
+    ? `+${addCount}`
+    : `+${addCount} -${delCount}`;
+
+  return (
+    <Box flexDirection="column">
+      <Text color={Colors.Gray}>
+        {'┌─ '}{fileLabel}{' ('}{changeType}{') ── '}{statsStr}{' ─┐'}
+      </Text>
+      {renderedOutput}
+    </Box>
+  );
 };
 
 const renderDiffContent = (
@@ -230,9 +248,12 @@ const renderDiffContent = (
           relevantLineNumberForGapCalc >
             lastLineNumber + MAX_CONTEXT_LINES_WITHOUT_GAP + 1
         ) {
+          const skippedLines = relevantLineNumberForGapCalc - lastLineNumber - 1;
           acc.push(
             <Box key={`gap-${index}`}>
-              <Text wrap="truncate">{'═'.repeat(terminalWidth)}</Text>
+              <Text color={Colors.Gray} dimColor>
+                {'     ⋯ '}{skippedLines > 0 ? `${skippedLines} unchanged lines` : '···'}
+              </Text>
             </Box>,
           );
         }
@@ -273,11 +294,14 @@ const renderDiffContent = (
 
         const displayContent = line.content.substring(baseIndentation);
 
+        const gutterChar = line.type === 'add' ? '│' : line.type === 'del' ? '│' : '│';
+        const gutterColor = line.type === 'add' ? 'green' : line.type === 'del' ? 'red' : Colors.Gray;
+
         acc.push(
           <Box key={lineKey} flexDirection="row">
             <Text color={Colors.Gray}>{gutterNumStr.padEnd(4)} </Text>
-            <Text color={color} dimColor={dim}>
-              {prefixSymbol}{' '}
+            <Text color={gutterColor}>
+              {gutterChar}{' '}
             </Text>
             <Text color={color} dimColor={dim} wrap="wrap">
               {displayContent}

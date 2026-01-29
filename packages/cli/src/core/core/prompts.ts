@@ -19,15 +19,15 @@ import { isGitRepository } from '../utils/gitUtils.js';
 import { MemoryTool, GROKCLI_CONFIG_DIR } from '../tools/memoryTool.js';
 
 export function getCoreSystemPrompt(userMemory?: string): string {
-  // if GEMINI_SYSTEM_MD is set (and not 0|false), override system prompt from file
-  // default path is .grokcli/system.md but can be modified via custom path in GEMINI_SYSTEM_MD
+  // if GROK_SYSTEM_MD is set (and not 0|false), override system prompt from file
+  // default path is .grokcli/system.md but can be modified via custom path in GROK_SYSTEM_MD
   let systemMdEnabled = false;
   let systemMdPath = path.join(GROKCLI_CONFIG_DIR, 'system.md');
-  const systemMdVar = process.env.GEMINI_SYSTEM_MD?.toLowerCase();
+  const systemMdVar = process.env.GROK_SYSTEM_MD?.toLowerCase();
   if (systemMdVar && !['0', 'false'].includes(systemMdVar)) {
     systemMdEnabled = true; // enable system prompt override
     if (!['1', 'true'].includes(systemMdVar)) {
-      systemMdPath = systemMdVar; // use custom path from GEMINI_SYSTEM_MD
+      systemMdPath = systemMdVar; // use custom path from GROK_SYSTEM_MD
     }
     // require file to exist when override is enabled
     if (!fs.existsSync(systemMdPath)) {
@@ -266,13 +266,13 @@ To help you check their settings, I can read their contents. Which one would you
 Your core function is efficient and safe assistance. Balance extreme conciseness with the crucial need for clarity, especially regarding safety and potential system modifications. Always prioritize user control and project conventions. Never make assumptions about the contents of files; instead use '${ReadFileTool.Name}' or '${ReadManyFilesTool.Name}' to ensure you aren't making broad assumptions. Finally, you are an agent - please keep going until the user's query is completely resolved.
 `.trim();
 
-  // if GEMINI_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
-  const writeSystemMdVar = process.env.GEMINI_WRITE_SYSTEM_MD?.toLowerCase();
+  // if GROK_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
+  const writeSystemMdVar = process.env.GROK_WRITE_SYSTEM_MD?.toLowerCase();
   if (writeSystemMdVar && !['0', 'false'].includes(writeSystemMdVar)) {
     if (['1', 'true'].includes(writeSystemMdVar)) {
-      fs.writeFileSync(systemMdPath, basePrompt); // write to default path, can be modified via GEMINI_SYSTEM_MD
+      fs.writeFileSync(systemMdPath, basePrompt); // write to default path, can be modified via GROK_SYSTEM_MD
     } else {
-      fs.writeFileSync(writeSystemMdVar, basePrompt); // write to custom path from GEMINI_WRITE_SYSTEM_MD
+      fs.writeFileSync(writeSystemMdVar, basePrompt); // write to custom path from GROK_WRITE_SYSTEM_MD
     }
   }
 

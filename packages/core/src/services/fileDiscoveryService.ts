@@ -8,16 +8,16 @@ import { GitIgnoreParser, GitIgnoreFilter } from '../utils/gitIgnoreParser.js';
 import { isGitRepository } from '../utils/gitUtils.js';
 import * as path from 'path';
 
-const GEMINI_IGNORE_FILE_NAME = '.grokcliignore';
+const GROK_IGNORE_FILE_NAME = '.grokcliignore';
 
 export interface FilterFilesOptions {
   respectGitIgnore?: boolean;
-  respectGeminiIgnore?: boolean;
+  respectGrokIgnore?: boolean;
 }
 
 export class FileDiscoveryService {
   private gitIgnoreFilter: GitIgnoreFilter | null = null;
-  private geminiIgnoreFilter: GitIgnoreFilter | null = null;
+  private grokIgnoreFilter: GitIgnoreFilter | null = null;
   private projectRoot: string;
 
   constructor(projectRoot: string) {
@@ -33,11 +33,11 @@ export class FileDiscoveryService {
     }
     const gParser = new GitIgnoreParser(this.projectRoot);
     try {
-      gParser.loadPatterns(GEMINI_IGNORE_FILE_NAME);
+      gParser.loadPatterns(GROK_IGNORE_FILE_NAME);
     } catch (_error) {
       // ignore file not found
     }
-    this.geminiIgnoreFilter = gParser;
+    this.grokIgnoreFilter = gParser;
   }
 
   /**
@@ -47,7 +47,7 @@ export class FileDiscoveryService {
     filePaths: string[],
     options: FilterFilesOptions = {
       respectGitIgnore: true,
-      respectGeminiIgnore: true,
+      respectGrokIgnore: true,
     },
   ): string[] {
     return filePaths.filter((filePath) => {
@@ -55,8 +55,8 @@ export class FileDiscoveryService {
         return false;
       }
       if (
-        options.respectGeminiIgnore &&
-        this.shouldGeminiIgnoreFile(filePath)
+        options.respectGrokIgnore &&
+        this.shouldGrokIgnoreFile(filePath)
       ) {
         return false;
       }
@@ -75,11 +75,11 @@ export class FileDiscoveryService {
   }
 
   /**
-   * Checks if a single file should be gemini-ignored
+   * Checks if a single file should be grok-ignored
    */
-  shouldGeminiIgnoreFile(filePath: string): boolean {
-    if (this.geminiIgnoreFilter) {
-      return this.geminiIgnoreFilter.isIgnored(filePath);
+  shouldGrokIgnoreFile(filePath: string): boolean {
+    if (this.grokIgnoreFilter) {
+      return this.grokIgnoreFilter.isIgnored(filePath);
     }
     return false;
   }
@@ -87,7 +87,7 @@ export class FileDiscoveryService {
   /**
    * Returns loaded patterns from .grokcliignore
    */
-  getGeminiIgnorePatterns(): string[] {
-    return this.geminiIgnoreFilter?.getPatterns() ?? [];
+  getGrokIgnorePatterns(): string[] {
+    return this.grokIgnoreFilter?.getPatterns() ?? [];
   }
 }

@@ -1,6 +1,6 @@
 # Grok CLI Core
 
-Grok CLI's core package (`packages/core`) is the backend portion of Grok CLI, handling communication with various LLM APIs, managing tools, and processing requests sent from `packages/cli`. For a general overview of Grok CLI, see the [main documentation page](../index.md).
+Grok CLI's core package (`packages/core`) is the backend portion of Grok CLI, handling communication with XAI (Grok) and Ollama, managing tools, and processing requests sent from `packages/cli`. For a general overview of Grok CLI, see the [main documentation page](../index.md).
 
 ## Navigating this section
 

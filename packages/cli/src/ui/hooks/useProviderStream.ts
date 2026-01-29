@@ -18,7 +18,8 @@ import {
   UnauthorizedError,
 } from '../../core/index.js';
 import { getProvider } from '../../core/providers/registry.js';
-import { ToolCallResponse } from '../../core/providers/index.js';
+import { ToolCallResponse, StreamChunk } from '../../core/providers/index.js';
+import { PLAN_MODE_PROMPT } from '../../core/providers/systemPrompts.js';
 // Generic types for provider responses
 type Part = any;
 type PartListUnion = any;
@@ -29,6 +30,7 @@ import {
   HistoryItemToolGroup,
   MessageType,
   ToolCallStatus,
+  AgentPhase,
 } from '../types.js';
 import { isAtCommand } from '../utils/commandUtils.js';
 import { parseAndFormatApiError } from '../utils/errorParsing.js';
@@ -68,7 +70,7 @@ enum StreamProcessingStatus {
 }
 
 /**
- * Manages the Gemini stream, including user input, command processing,
+ * Manages the Grok stream, including user input, command processing,
  * API interaction, and tool call lifecycle.
  */
 export const useProviderStream = (
@@ -92,6 +94,10 @@ export const useProviderStream = (
   const turnCancelledRef = useRef(false);
   const [isResponding, setIsResponding] = useState<boolean>(false);
   const [thought, setThought] = useState<ThoughtSummary | null>(null);
+  const [agentPhase, setAgentPhase] = useState<AgentPhase>('thinking');
+  const [planMode, setPlanMode] = useState<boolean>(false);
+  const [planText, setPlanText] = useState<string | null>(null);
+  const planOriginalPromptRef = useRef<string | null>(null);
   const [pendingHistoryItemRef, setPendingHistoryItem] =
     useStateAndRef<HistoryItemWithoutId | null>(null);
   const processedMemoryToolsRef = useRef<Set<string>>(new Set());
@@ -159,7 +165,7 @@ export const useProviderStream = (
             tc.status === 'error' ||
             tc.status === 'cancelled') &&
             !(tc as TrackedCompletedToolCall | TrackedCancelledToolCall)
-              .responseSubmittedToGemini),
+              .responseSubmitted),
       )
     ) {
       return StreamingState.Responding;
@@ -189,7 +195,7 @@ export const useProviderStream = (
     }
   });
 
-  const prepareQueryForGemini = useCallback(
+  const prepareQueryForGrok = useCallback(
     async (
       query: PartListUnion,
       userMessageTimestamp: number,
@@ -205,7 +211,7 @@ export const useProviderStream = (
         return { queryToSend: null, shouldProceed: false };
       }
 
-      let localQueryToSendToGemini: PartListUnion | null = null;
+      let localQueryToSendToGrok: PartListUnion | null = null;
 
       if (typeof query === 'string') {
         const trimmedQuery = query.trim();
@@ -254,27 +260,27 @@ export const useProviderStream = (
           if (!atCommandResult.shouldProceed) {
             return { queryToSend: null, shouldProceed: false };
           }
-          localQueryToSendToGemini = atCommandResult.processedQuery;
+          localQueryToSendToGrok = atCommandResult.processedQuery;
         } else {
-          // Normal query for Gemini
+          // Normal query for Grok
           addItem(
             { type: MessageType.USER, text: trimmedQuery },
             userMessageTimestamp,
           );
-          localQueryToSendToGemini = trimmedQuery;
+          localQueryToSendToGrok = trimmedQuery;
         }
       } else {
         // It's a function response (PartListUnion that isn't a string)
-        localQueryToSendToGemini = query;
+        localQueryToSendToGrok = query;
       }
 
-      if (localQueryToSendToGemini === null) {
+      if (localQueryToSendToGrok === null) {
         onDebugMessage(
-          'Query processing resulted in null, not sending to Gemini.',
+          'Query processing resulted in null, not sending to Grok.',
         );
         return { queryToSend: null, shouldProceed: false };
       }
-      return { queryToSend: localQueryToSendToGemini, shouldProceed: true };
+      return { queryToSend: localQueryToSendToGrok, shouldProceed: true };
     },
     [
       config,
@@ -391,6 +397,7 @@ export const useProviderStream = (
       }
 
       setIsResponding(true);
+      setAgentPhase('thinking');
       setInitError(null);
       
       // Create abort controller for this request
@@ -442,12 +449,60 @@ export const useProviderStream = (
         
         const provider = getProvider(providerName, providerConfig);
         
-        // Call the provider with tools
-        console.debug(`[DEBUG] Interactive UI - Calling provider.queryWithTools...`);
+        // In plan mode, prepend the plan prompt and skip tools
+        const effectivePrompt = planMode
+          ? `${PLAN_MODE_PROMPT}\n\n${promptText}`
+          : promptText;
+        const effectiveTools = planMode ? [] : tools;
+
+        // Call the provider with streaming
+        console.debug(`[DEBUG] Interactive UI - Calling provider.queryWithToolsStreaming...`);
         console.debug(`[DEBUG] Interactive UI - With tool results:`, toolResults?.length || 0);
-        const response: ToolCallResponse = await provider.queryWithTools(promptText || '', tools, queryOptions);
+
+        let streamedContent = '';
+        const onChunk = (chunk: StreamChunk) => {
+          if (chunk.type === 'content' && chunk.content) {
+            streamedContent += chunk.content;
+            // Update pending assistant text for live display
+            setPendingHistoryItem({
+              type: 'assistant',
+              text: streamedContent,
+            });
+          }
+        };
+
+        const response: ToolCallResponse = await provider.queryWithToolsStreaming(
+          effectivePrompt || '',
+          effectiveTools,
+          queryOptions,
+          onChunk,
+          abortControllerRef.current?.signal,
+        );
+        // Clear pending item since we'll add final to history
+        setPendingHistoryItem(null);
+
+        // Report token usage to session stats
+        if (response.usage) {
+          addUsage({
+            promptTokenCount: response.usage.prompt_tokens ?? 0,
+            candidatesTokenCount: response.usage.completion_tokens ?? 0,
+            totalTokenCount: response.usage.total_tokens ?? 0,
+          });
+        }
+
         console.debug(`[DEBUG] Interactive UI - Response received:`, response.content?.substring(0, 100));
         console.debug(`[DEBUG] Interactive UI - Tool calls:`, response.tool_calls?.length || 0);
+
+        // In plan mode, show plan text and stop (don't execute tools)
+        if (planMode && response.content) {
+          setPlanText(response.content);
+          setIsResponding(false);
+          addItem(
+            { type: 'assistant', text: response.content },
+            Date.now(),
+          );
+          return;
+        }
 
         // Store the response for potential tool result continuation
         if (response.tool_calls && response.tool_calls.length > 0) {
@@ -493,6 +548,7 @@ export const useProviderStream = (
           });
           
           console.debug(`[DEBUG] Interactive UI - Scheduling tool calls:`, toolCallRequests.map(t => t.toolName));
+          setAgentPhase('executing_tools');
           scheduleToolCalls(toolCallRequests, abortControllerRef.current?.signal);
           
         } else {
@@ -501,6 +557,7 @@ export const useProviderStream = (
           console.debug(`[DEBUG] Interactive UI - Is continuation: ${options?.isContinuation}`);
           console.debug(`[DEBUG] Interactive UI - Response content: "${response.content?.substring(0, 200)}"`);
           
+          setAgentPhase('responding');
           // Always add the response, even for continuations
           if (response.content) {
             addItem(
@@ -552,8 +609,8 @@ export const useProviderStream = (
   /**
    * Automatically submits responses for completed tool calls.
    * This effect runs when `toolCalls` or `isResponding` changes.
-   * It ensures that tool responses are sent back to Gemini only when
-   * all processing for a given set of tools is finished and Gemini
+   * It ensures that tool responses are sent back to Grok only when
+   * all processing for a given set of tools is finished and Grok
    * is not already generating a response.
    */
   useEffect(() => {
@@ -576,7 +633,7 @@ export const useProviderStream = (
               | TrackedCompletedToolCall
               | TrackedCancelledToolCall;
             return (
-              !completedOrCancelledCall.responseSubmittedToGemini &&
+              !completedOrCancelledCall.responseSubmitted &&
               completedOrCancelledCall.response?.responseParts !== undefined
             );
           }
@@ -609,7 +666,7 @@ export const useProviderStream = (
         );
       }
 
-      // Only proceed with submitting to Gemini if ALL tools are complete.
+      // Only proceed with submitting if ALL tools are complete.
       const allToolsAreComplete =
         toolCalls.length > 0 &&
         toolCalls.length === completedAndReadyToSubmitTools.length;
@@ -618,34 +675,33 @@ export const useProviderStream = (
         return;
       }
 
-      const geminiTools = completedAndReadyToSubmitTools.filter(
+      const providerTools = completedAndReadyToSubmitTools.filter(
         (t) => !t.request.isClientInitiated,
       );
 
-      if (geminiTools.length === 0) {
+      if (providerTools.length === 0) {
         return;
       }
 
-      // If all the tools were cancelled, don't submit a response to Gemini.
-      const allToolsCancelled = geminiTools.every(
+      // If all the tools were cancelled, don't submit a response.
+      const allToolsCancelled = providerTools.every(
         (tc) => tc.status === 'cancelled',
       );
 
       if (allToolsCancelled) {
-        // For non-Google providers, we don't need to manage history manually
-        // The provider system handles this internally
+        // Provider system handles history internally
 
-        const callIdsToMarkAsSubmitted = geminiTools.map(
+        const callIdsToMarkAsSubmitted = providerTools.map(
           (toolCall) => toolCall.request.callId,
         );
         markToolsAsSubmitted(callIdsToMarkAsSubmitted);
         return;
       }
 
-      const responsesToSend: PartListUnion[] = geminiTools.map(
+      const responsesToSend: PartListUnion[] = providerTools.map(
         (toolCall) => toolCall.response.responseParts,
       );
-      const callIdsToMarkAsSubmitted = geminiTools.map(
+      const callIdsToMarkAsSubmitted = providerTools.map(
         (toolCall) => toolCall.request.callId,
       );
 
@@ -790,11 +846,50 @@ export const useProviderStream = (
     saveRestorableToolCalls();
   }, [toolCalls, config, onDebugMessage, gitService, history]);
 
+  const approvePlan = useCallback(() => {
+    if (planOriginalPromptRef.current) {
+      setPlanMode(false);
+      setPlanText(null);
+      const prompt = planOriginalPromptRef.current;
+      planOriginalPromptRef.current = null;
+      submitQuery(prompt);
+    }
+  }, [submitQuery]);
+
+  const rejectPlan = useCallback(() => {
+    setPlanMode(false);
+    setPlanText(null);
+    planOriginalPromptRef.current = null;
+    addItem(
+      { type: MessageType.INFO, text: 'Plan rejected.' },
+      Date.now(),
+    );
+  }, [addItem]);
+
+  const editPlan = useCallback(() => {
+    // For now, reject and let user re-prompt
+    setPlanMode(false);
+    setPlanText(null);
+    planOriginalPromptRef.current = null;
+    addItem(
+      { type: MessageType.INFO, text: 'Plan editing: re-enter your modified prompt.' },
+      Date.now(),
+    );
+  }, [addItem]);
+
   return {
     streamingState,
     submitQuery,
     initError,
     pendingHistoryItems,
     thought,
+    agentPhase,
+    planMode,
+    planText,
+    approvePlan,
+    rejectPlan,
+    editPlan,
+    setPlanMode,
+    planOriginalPromptRef,
   };
 };

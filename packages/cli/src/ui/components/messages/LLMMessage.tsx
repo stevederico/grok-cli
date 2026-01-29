@@ -26,17 +26,20 @@ export const LLMMessage: React.FC<LLMMessageProps> = ({
   const prefixWidth = prefix.length;
 
   return (
-    <Box flexDirection="row">
-      <Box width={prefixWidth}>
-        <Text color={Colors.AccentPurple}>{prefix}</Text>
-      </Box>
-      <Box flexGrow={1} flexDirection="column">
-        <MarkdownDisplay
-          text={text}
-          isPending={isPending}
-          availableTerminalHeight={availableTerminalHeight}
-          terminalWidth={terminalWidth}
-        />
+    <Box flexDirection="column">
+      <Text color={Colors.Gray} dimColor>{'─'.repeat(Math.min(terminalWidth - 2, 60))}</Text>
+      <Box flexDirection="row">
+        <Box width={prefixWidth}>
+          <Text color={Colors.AccentPurple}>{prefix}</Text>
+        </Box>
+        <Box flexGrow={1} flexDirection="column">
+          <MarkdownDisplay
+            text={text}
+            isPending={isPending}
+            availableTerminalHeight={availableTerminalHeight}
+            terminalWidth={terminalWidth}
+          />
+        </Box>
       </Box>
     </Box>
   );

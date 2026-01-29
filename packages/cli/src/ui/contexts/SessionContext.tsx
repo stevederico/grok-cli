@@ -12,7 +12,40 @@ import React, {
   useCallback,
 } from 'react';
 
-import { type GenerateContentResponseUsageMetadata } from '../../core/__stubs__/google-genai.js';
+import { type GenerateContentResponseUsageMetadata } from '../../core/__stubs__/types.js';
+
+// --- Pricing Map (per 1M tokens) ---
+
+export const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  'grok-3': { input: 3.00, output: 15.00 },
+  'grok-3-fast': { input: 5.00, output: 15.00 },
+  'grok-code-fast-1': { input: 0.15, output: 0.60 },
+  'grok-3-mini': { input: 0.30, output: 0.50 },
+  'grok-3-mini-fast': { input: 0.10, output: 0.50 },
+};
+
+/**
+ * Calculate cost for a given token usage and model.
+ * Returns 0 for local/ollama models or unknown models.
+ */
+export function calculateCost(
+  promptTokens: number,
+  candidateTokens: number,
+  model: string,
+): number {
+  // Local models are free
+  if (model.startsWith('ollama/') || model.includes(':')) {
+    return 0;
+  }
+  const pricing = MODEL_PRICING[model];
+  if (!pricing) {
+    return 0;
+  }
+  return (
+    (promptTokens / 1_000_000) * pricing.input +
+    (candidateTokens / 1_000_000) * pricing.output
+  );
+}
 
 // --- Interface Definitions ---
 

@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { PartUnion } from '../__stubs__/google-genai.js';
+import { PartUnion } from '../__stubs__/types.js';
 import mime from 'mime-types';
 
 // Constants for text file processing

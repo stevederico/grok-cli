@@ -9,7 +9,7 @@ import { StringDecoder } from 'string_decoder';
 import type { HistoryItemWithoutId } from '../types.js';
 import { useCallback } from 'react';
 import { Config } from '../../core/index.js';
-import { type PartListUnion } from '../../core/__stubs__/google-genai.js';
+import { type PartListUnion } from '../../core/__stubs__/types.js';
 import { formatMemoryUsage } from '../utils/formatters.js';
 import { isBinary } from '../utils/textUtils.js';
 import { UseHistoryManagerReturn } from './useHistoryManager.js';

@@ -16,7 +16,7 @@ import {
   FunctionDeclaration,
   mcpToTool,
   Schema,
-} from '../__stubs__/google-genai.js';
+} from '../__stubs__/types.js';
 import { ToolRegistry } from './tool-registry.js';
 
 export const MCP_DEFAULT_TIMEOUT_MSEC = 10 * 60 * 1000; // default to 10 minutes
@@ -289,7 +289,7 @@ async function connectAndDiscover(
 
       let toolNameForModel = funcDecl.name;
 
-      // Replace invalid characters (based on 400 error message from Gemini API) with underscores
+      // Replace invalid characters (based on 400 error message from Grok API) with underscores
       toolNameForModel = toolNameForModel.replace(/[^a-zA-Z0-9_.-]/g, '_');
 
       const existingTool = toolRegistry.getTool(toolNameForModel);
@@ -298,7 +298,7 @@ async function connectAndDiscover(
       }
 
       // If longer than 63 characters, replace middle with '___'
-      // (Gemini API says max length 64, but actual limit seems to be 63)
+      // (Grok API says max length 64, but actual limit seems to be 63)
       if (toolNameForModel.length > 63) {
         toolNameForModel =
           toolNameForModel.slice(0, 28) + '___' + toolNameForModel.slice(-32);

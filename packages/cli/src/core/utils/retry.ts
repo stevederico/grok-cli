@@ -97,7 +97,7 @@ export async function retryWithBackoff<T>(
       if (
         consecutive429Count >= 2 &&
         onPersistent429 &&
-        authType === AuthType.GOOGLE_OAUTH
+        authType === AuthType.API_KEY
       ) {
         try {
           const fallbackModel = await onPersistent429(authType);

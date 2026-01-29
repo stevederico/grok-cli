@@ -18,9 +18,9 @@ Grok CLI is primarily composed of two main packages, along with a suite of tools
 
 2.  **Core package (`packages/core`):**
 
-    - **Purpose:** This acts as the backend for Grok CLI. It receives requests sent from `packages/cli`, orchestrates interactions with various LLM APIs, and manages the execution of available tools.
+    - **Purpose:** This acts as the backend for Grok CLI. It receives requests sent from `packages/cli`, orchestrates interactions with the supported AI providers (XAI/Grok and Ollama), and manages the execution of available tools.
     - **Key functions contained in the package:**
-      - API client for communicating with various LLM APIs
+      - API clients for communicating with XAI (Grok) and Ollama providers
       - Prompt construction and management
       - Tool registration and execution logic
       - State management for conversations or sessions

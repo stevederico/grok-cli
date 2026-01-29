@@ -45,11 +45,11 @@ Cross-platform sandboxing with complete process isolation.
 
 ```bash
 # Enable sandboxing with command flag
-gemini -s -p "analyze the code structure"
+grok -s -p "analyze the code structure"
 
 # Use environment variable
-export GEMINI_SANDBOX=true
-gemini -p "run the test suite"
+export GROK_SANDBOX=true
+grok -p "run the test suite"
 
 # Configure in settings.json
 {
@@ -62,7 +62,7 @@ gemini -p "run the test suite"
 ### Enable sandboxing (in order of precedence)
 
 1. **Command flag**: `-s` or `--sandbox`
-2. **Environment variable**: `GEMINI_SANDBOX=true|docker|podman|sandbox-exec`
+2. **Environment variable**: `GROK_SANDBOX=true|docker|podman|sandbox-exec`
 3. **Settings file**: `"sandbox": true` in `settings.json`
 
 ### macOS Seatbelt profiles
@@ -106,17 +106,17 @@ export SANDBOX_SET_UID_GID=false  # Disable UID/GID mapping
 ### Debug mode
 
 ```bash
-DEBUG=1 gemini -s -p "debug command"
+DEBUG=1 grok -s -p "debug command"
 ```
 
 ### Inspect sandbox
 
 ```bash
 # Check environment
-gemini -s -p "run shell command: env | grep SANDBOX"
+grok -s -p "run shell command: env | grep SANDBOX"
 
 # List mounts
-gemini -s -p "run shell command: mount | grep workspace"
+grok -s -p "run shell command: mount | grep workspace"
 ```
 
 ## Security notes

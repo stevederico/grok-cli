@@ -10,6 +10,9 @@ import {
 } from '../core/index.js';
 import { CumulativeStats } from './contexts/SessionContext.js';
 
+// Phase of agent processing for visual feedback
+export type AgentPhase = 'thinking' | 'executing_tools' | 'responding';
+
 // Only defining the state enum needed by the UI
 export enum StreamingState {
   Idle = 'idle',
@@ -148,7 +151,7 @@ export enum MessageType {
   ABOUT = 'about',
   STATS = 'stats',
   QUIT = 'quit',
-  GEMINI = 'ai',
+  GROK = 'ai',
   ASSISTANT = 'assistant',
 }
 

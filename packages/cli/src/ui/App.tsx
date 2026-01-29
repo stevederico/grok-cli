@@ -34,11 +34,13 @@ import { AutoAcceptIndicator } from './components/AutoAcceptIndicator.js';
 import { ShellModeIndicator } from './components/ShellModeIndicator.js';
 import { InputPrompt } from './components/InputPrompt.js';
 import { Footer } from './components/Footer.js';
+import { PlanApprovalDialog } from './components/PlanApprovalDialog.js';
 import { ProviderDialog } from './components/ProviderDialog.js';
 import { ModelDialog } from './components/ModelDialog.js';
 import { AuthDialog } from './components/AuthDialog.js';
 import { AuthInProgress } from './components/AuthInProgress.js';
 import { EditorSettingsDialog } from './components/EditorSettingsDialog.js';
+import { ThemeDialog } from './components/ThemeDialog.js';
 import { Colors } from './colors.js';
 import { Help } from './components/Help.js';
 import { loadHierarchicalMemory } from '../config/config.js';
@@ -53,7 +55,7 @@ import process from 'node:process';
 import {
   getErrorMessage,
   type Config,
-  getAllGeminiMdFilenames,
+  getAllGrokMdFilenames,
   ApprovalMode,
   isEditorAvailable,
   EditorType,
@@ -64,6 +66,7 @@ import { StreamingContext } from './contexts/StreamingContext.js';
 import {
   SessionStatsProvider,
   useSessionStats,
+  calculateCost,
 } from './contexts/SessionContext.js';
 import { useGitBranchName } from './hooks/useGitBranchName.js';
 import { useBracketedPaste } from './hooks/useBracketedPaste.js';
@@ -149,8 +152,8 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     [consoleMessages],
   );
 
-  // Initialize theme without dialog
-  useThemeCommand(settings, setThemeError, addItem);
+  // Initialize theme command
+  const { isThemeDialogOpen, openThemeDialog, handleThemeSelect, handleThemeHighlight } = useThemeCommand(settings, setThemeError, addItem);
 
   const {
     isProviderDialogOpen,
@@ -166,6 +169,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
 
   const {
     isAuthDialogOpen,
+    openAuthDialog,
     handleAuthSelect,
     handleAuthHighlight,
     isAuthenticating,
@@ -209,8 +213,8 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
         config.getExtensionContextFilePaths(),
       );
       config.setUserMemory(memoryContent);
-      config.setGeminiMdFileCount(fileCount);
-      config.setGeminiMdFilePaths(filePaths);
+      config.setGrokMdFileCount(fileCount);
+      config.setGrokMdFilePaths(filePaths);
       setContextMdFileCount(fileCount);
       setContextFilePaths(filePaths);
 
@@ -266,8 +270,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
         {
           type: MessageType.INFO,
           text: `⚡ Slow response times detected. Automatically switching from ${currentModel} to ${fallbackModel} for faster responses for the remainder of this session.
-⚡ To avoid this you can either upgrade to Standard tier. See: https://goo.gle/set-up-gemini-code-assist
-⚡ Or you can utilize a Gemini API Key. See: https://goo.gle/grokcli-docs-auth#gemini-api-key`,
+⚡ To avoid this, check your API key configuration and rate limits.`,
         },
         Date.now(),
       );
@@ -299,10 +302,12 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     openPrivacyNotice,
     openProviderDialog,
     openModelDialog,
+    openThemeDialog,
+    openAuthDialog,
   );
   const pendingHistoryItems = [...pendingSlashCommandHistoryItems];
 
-  const { rows: terminalHeight, columns: terminalWidth } = useTerminalSize();
+  const { rows: terminalHeight, columns: terminalWidth, resizing } = useTerminalSize();
   const isInitialMount = useRef(true);
   const { stdin, setRawMode } = useStdin();
   const isValidPath = useCallback((filePath: string): boolean => {
@@ -410,8 +415,8 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
 
   useEffect(() => {
     if (config) {
-      setContextMdFileCount(config.getGeminiMdFileCount());
-      setContextFilePaths(config.getGeminiMdFilePaths());
+      setContextMdFileCount(config.getGrokMdFileCount());
+      setContextFilePaths(config.getGrokMdFilePaths());
     }
   }, [config]);
 
@@ -434,8 +439,16 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     streamingState,
     submitQuery,
     initError,
-    pendingHistoryItems: pendingGeminiHistoryItems,
+    pendingHistoryItems: pendingProviderHistoryItems,
     thought,
+    agentPhase,
+    planMode,
+    planText,
+    approvePlan,
+    rejectPlan,
+    editPlan,
+    setPlanMode,
+    planOriginalPromptRef,
   } = useProviderStream(
     config,
     history,
@@ -448,7 +461,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     onAuthError,
     performMemoryRefresh,
   );
-  pendingHistoryItems.push(...pendingGeminiHistoryItems);
+  pendingHistoryItems.push(...pendingProviderHistoryItems);
   const { elapsedTime, currentLoadingPhrase } =
     useLoadingIndicator(streamingState);
   const showAutoAcceptIndicator = useAutoAcceptIndicator({ config });
@@ -460,6 +473,20 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       }
       const trimmedValue = submittedValue.trim();
       if (trimmedValue.length > 0) {
+        // Handle /plan command
+        if (trimmedValue.startsWith('/plan ')) {
+          const taskDescription = trimmedValue.slice(6).trim();
+          if (taskDescription) {
+            addItem(
+              { type: MessageType.INFO, text: `Planning: ${taskDescription}` },
+              Date.now(),
+            );
+            setPlanMode(true);
+            planOriginalPromptRef.current = taskDescription;
+            submitQuery(taskDescription);
+            return;
+          }
+        }
         if (config.getDebugMode()) {
           console.debug(`[DEBUG] App - calling submitQuery with: '${trimmedValue}'`);
         }
@@ -470,7 +497,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
         }
       }
     },
-    [submitQuery, config],
+    [submitQuery, config, addItem, setPlanMode, planOriginalPromptRef],
   );
 
   const logger = useLogger();
@@ -597,7 +624,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     if (fromSettings) {
       return Array.isArray(fromSettings) ? fromSettings : [fromSettings];
     }
-    return getAllGeminiMdFilenames();
+    return getAllGrokMdFilenames();
   }, [settings.merged.contextFileName]);
 
   if (quittingMessages) {
@@ -745,6 +772,21 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 currentModel={config?.getModel() || 'Unknown'}
               />
             </Box>
+          ) : isThemeDialogOpen ? (
+            <Box flexDirection="column">
+              {themeError && (
+                <Box marginBottom={1}>
+                  <Text color={Colors.AccentRed}>{themeError}</Text>
+                </Box>
+              )}
+              <ThemeDialog
+                onSelect={handleThemeSelect}
+                onHighlight={handleThemeHighlight}
+                settings={settings}
+                availableTerminalHeight={availableTerminalHeight}
+                terminalWidth={terminalWidth}
+              />
+            </Box>
           ) : showPrivacyNotice ? (
             <PrivacyNotice
               onExit={() => setShowPrivacyNotice(false)}
@@ -764,6 +806,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                     : currentLoadingPhrase
                 }
                 elapsedTime={elapsedTime}
+                agentPhase={agentPhase}
               />
               <Box
                 marginTop={1}
@@ -772,7 +815,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 width="100%"
               >
                 <Box>
-                  {process.env.GEMINI_SYSTEM_MD && (
+                  {process.env.GROK_SYSTEM_MD && (
                     <Text color={Colors.AccentRed}>|⌐■_■| </Text>
                   )}
                   {ctrlCPressedOnce ? (
@@ -817,7 +860,16 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 </OverflowProvider>
               )}
 
-              {isInputActive && (
+              {planMode && planText && (
+                <PlanApprovalDialog
+                  planText={planText}
+                  onApprove={approvePlan}
+                  onReject={rejectPlan}
+                  onEdit={editPlan}
+                />
+              )}
+
+              {isInputActive && !planText && (
                 <InputPrompt
                   buffer={buffer}
                   inputWidth={inputWidth}
@@ -884,6 +936,11 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
               sessionStats.currentResponse.candidatesTokenCount
             }
             totalTokenCount={sessionStats.currentResponse.totalTokenCount}
+            sessionCost={calculateCost(
+              sessionStats.cumulative.promptTokenCount,
+              sessionStats.cumulative.candidatesTokenCount,
+              currentModel,
+            )}
           />
         </Box>
       </Box>

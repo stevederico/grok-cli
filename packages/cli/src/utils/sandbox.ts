@@ -172,8 +172,8 @@ function entrypoint(workdir: string): string[] {
         ? 'npm run debug --'
         : 'npm rebuild && npm run start --'
       : process.env.DEBUG
-        ? `node --inspect-brk=0.0.0.0:${process.env.DEBUG_PORT || '9229'} $(which gemini)`
-        : 'gemini';
+        ? `node --inspect-brk=0.0.0.0:${process.env.DEBUG_PORT || '9229'} $(which grok)`
+        : 'grok';
 
   const args = [...shellCmds, cliCmd, ...cliArgs];
 
@@ -233,8 +233,8 @@ export async function start_sandbox(
         ...process.argv.map((arg) => quote([arg])),
       ].join(' '),
     ];
-    // start and set up proxy if GEMINI_SANDBOX_PROXY_COMMAND is set
-    const proxyCommand = process.env.GEMINI_SANDBOX_PROXY_COMMAND;
+    // start and set up proxy if GROK_SANDBOX_PROXY_COMMAND is set
+    const proxyCommand = process.env.GROK_SANDBOX_PROXY_COMMAND;
     let proxyProcess: ChildProcess | undefined = undefined;
     let sandboxProcess: ChildProcess | undefined = undefined;
     const sandboxEnv = { ...process.env };
@@ -320,7 +320,7 @@ export async function start_sandbox(
   if (process.env.BUILD_SANDBOX) {
     if (!gcPath.includes('grok-cli/packages/')) {
       console.error(
-        'ERROR: cannot build sandbox using installed gemini binary; ' +
+        'ERROR: cannot build sandbox using installed grok binary; ' +
           'run `npm link ./packages/cli` under grok-cli repo to switch to linked binary.',
       );
       process.exit(1);
@@ -343,7 +343,7 @@ export async function start_sandbox(
           stdio: 'inherit',
           env: {
             ...process.env,
-            GEMINI_SANDBOX: config.command, // in case sandbox is enabled via flags (see config.ts under cli package)
+            GROK_SANDBOX: config.command, // in case sandbox is enabled via flags (see config.ts under cli package)
           },
         },
       );
@@ -403,14 +403,14 @@ export async function start_sandbox(
     );
   }
 
-  // mount ADC file if GOOGLE_APPLICATION_CREDENTIALS is set
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    const adcFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-    if (fs.existsSync(adcFile)) {
-      args.push('--volume', `${adcFile}:${getContainerPath(adcFile)}:ro`);
+  // mount XAI credentials file if XAI_APPLICATION_CREDENTIALS is set
+  if (process.env.XAI_APPLICATION_CREDENTIALS) {
+    const credFile = process.env.XAI_APPLICATION_CREDENTIALS;
+    if (fs.existsSync(credFile)) {
+      args.push('--volume', `${credFile}:${getContainerPath(credFile)}:ro`);
       args.push(
         '--env',
-        `GOOGLE_APPLICATION_CREDENTIALS=${getContainerPath(adcFile)}`,
+        `XAI_APPLICATION_CREDENTIALS=${getContainerPath(credFile)}`,
       );
     }
   }
@@ -455,8 +455,8 @@ export async function start_sandbox(
 
   // copy proxy environment variables, replacing localhost with SANDBOX_PROXY_NAME
   // copy as both upper-case and lower-case as is required by some utilities
-  // GEMINI_SANDBOX_PROXY_COMMAND implies HTTPS_PROXY unless HTTP_PROXY is set
-  const proxyCommand = process.env.GEMINI_SANDBOX_PROXY_COMMAND;
+  // GROK_SANDBOX_PROXY_COMMAND implies HTTPS_PROXY unless HTTP_PROXY is set
+  const proxyCommand = process.env.GROK_SANDBOX_PROXY_COMMAND;
 
   if (proxyCommand) {
     let proxy =
@@ -509,38 +509,14 @@ export async function start_sandbox(
   const containerName = `${imageName}-${index}`;
   args.push('--name', containerName, '--hostname', containerName);
 
-  // copy Google API keys
-  if (process.env.GOOGLE_API_KEY) {
-    args.push('--env', `GOOGLE_API_KEY=${process.env.GOOGLE_API_KEY}`);
+  // copy XAI API key
+  if (process.env.XAI_API_KEY) {
+    args.push('--env', `XAI_API_KEY=${process.env.XAI_API_KEY}`);
   }
 
-  // copy GOOGLE_GENAI_USE_VERTEXAI
-  if (process.env.GOOGLE_GENAI_USE_VERTEXAI) {
-    args.push(
-      '--env',
-      `GOOGLE_GENAI_USE_VERTEXAI=${process.env.GOOGLE_GENAI_USE_VERTEXAI}`,
-    );
-  }
-
-  // copy GOOGLE_CLOUD_PROJECT
-  if (process.env.GOOGLE_CLOUD_PROJECT) {
-    args.push(
-      '--env',
-      `GOOGLE_CLOUD_PROJECT=${process.env.GOOGLE_CLOUD_PROJECT}`,
-    );
-  }
-
-  // copy GOOGLE_CLOUD_LOCATION
-  if (process.env.GOOGLE_CLOUD_LOCATION) {
-    args.push(
-      '--env',
-      `GOOGLE_CLOUD_LOCATION=${process.env.GOOGLE_CLOUD_LOCATION}`,
-    );
-  }
-
-  // copy GEMINI_MODEL
-  if (process.env.GEMINI_MODEL) {
-    args.push('--env', `GEMINI_MODEL=${process.env.GEMINI_MODEL}`);
+  // copy GROK_MODEL
+  if (process.env.GROK_MODEL) {
+    args.push('--env', `GROK_MODEL=${process.env.GROK_MODEL}`);
   }
 
   // copy TERM and COLORTERM to try to maintain terminal setup
@@ -631,10 +607,10 @@ export async function start_sandbox(
 
     // Instead of passing --user to the main sandbox container, we let it
     // start as root, then create a user with the host's UID/GID, and
-    // finally switch to that user to run the gemini process. This is
+    // finally switch to that user to run the grok process. This is
     // necessary on Linux to ensure the user exists within the
     // container's /etc/passwd file, which is required by os.userInfo().
-    const username = 'gemini';
+    const username = 'grok';
     const homeDir = getContainerPath(os.homedir());
 
     const setupUserCommands = [
@@ -665,7 +641,7 @@ export async function start_sandbox(
   // push container entrypoint (including args)
   args.push(...finalEntrypoint);
 
-  // start and set up proxy if GEMINI_SANDBOX_PROXY_COMMAND is set
+  // start and set up proxy if GROK_SANDBOX_PROXY_COMMAND is set
   let proxyProcess: ChildProcess | undefined = undefined;
   let sandboxProcess: ChildProcess | undefined = undefined;
 

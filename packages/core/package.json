@@ -1,6 +1,6 @@
 {
   "name": "@stevederico/grok-cli-core",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Grok CLI Core - Universal LLM CLI Core",
   "keywords": ["cli", "ai", "grok", "llm", "xai", "ollama", "core"],
   "homepage": "https://github.com/stevederico/grok-cli#readme",

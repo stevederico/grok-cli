@@ -15,7 +15,7 @@ function bindPackageDependencies() {
   // assume packages are all under /<repo_root>/packages/
   const packagesDir = path.join(path.dirname(scriptDir));
 
-  const geminiCodePkgs = fs
+  const grokCliPkgs = fs
     .readdirSync(packagesDir)
     .filter(
       (name) =>
@@ -34,11 +34,11 @@ function bindPackageDependencies() {
   currentPkg.dependencies = _.mapValues(
     currentPkg.dependencies,
     (value, key) => {
-      if (geminiCodePkgs[key]) {
+      if (grokCliPkgs[key]) {
         console.log(
           `Package ${currentPkg.name} has a dependency on ${key}. Updating dependent version.`,
         );
-        return geminiCodePkgs[key].version;
+        return grokCliPkgs[key].version;
       }
       return value;
     },

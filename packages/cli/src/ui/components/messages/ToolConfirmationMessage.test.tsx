@@ -35,9 +35,9 @@ describe('ToolConfirmationMessage', () => {
       type: 'info',
       title: 'Confirm Web Fetch',
       prompt:
-        'fetch https://github.com/google/gemini-react/blob/main/README.md',
+        'fetch https://github.com/stevederico/grok-cli/blob/main/README.md',
       urls: [
-        'https://raw.githubusercontent.com/google/gemini-react/main/README.md',
+        'https://raw.githubusercontent.com/stevederico/grok-cli/main/README.md',
       ],
       onConfirm: vi.fn(),
     };
@@ -52,7 +52,7 @@ describe('ToolConfirmationMessage', () => {
 
     expect(lastFrame()).toContain('URLs to fetch:');
     expect(lastFrame()).toContain(
-      '- https://raw.githubusercontent.com/google/gemini-react/main/README.md',
+      '- https://raw.githubusercontent.com/stevederico/grok-cli/main/README.md',
     );
   });
 });

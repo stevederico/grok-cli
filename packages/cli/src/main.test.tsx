@@ -60,10 +60,10 @@ vi.mock('./utils/sandbox.js', () => ({
   start_sandbox: vi.fn(() => Promise.resolve()), // Mock as an async function that resolves
 }));
 
-describe('gemini.tsx main function', () => {
+describe('grok.tsx main function', () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let loadSettingsMock: ReturnType<typeof vi.mocked<typeof loadSettings>>;
-  let originalEnvGeminiSandbox: string | undefined;
+  let originalEnvGrokSandbox: string | undefined;
   let originalEnvSandbox: string | undefined;
 
   const processExitSpy = vi
@@ -76,9 +76,9 @@ describe('gemini.tsx main function', () => {
     loadSettingsMock = vi.mocked(loadSettings);
 
     // Store and clear sandbox-related env variables to ensure a consistent test environment
-    originalEnvGeminiSandbox = process.env.GEMINI_SANDBOX;
+    originalEnvGrokSandbox = process.env.GROK_SANDBOX;
     originalEnvSandbox = process.env.SANDBOX;
-    delete process.env.GEMINI_SANDBOX;
+    delete process.env.GROK_SANDBOX;
     delete process.env.SANDBOX;
 
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -86,10 +86,10 @@ describe('gemini.tsx main function', () => {
 
   afterEach(() => {
     // Restore original env variables
-    if (originalEnvGeminiSandbox !== undefined) {
-      process.env.GEMINI_SANDBOX = originalEnvGeminiSandbox;
+    if (originalEnvGrokSandbox !== undefined) {
+      process.env.GROK_SANDBOX = originalEnvGrokSandbox;
     } else {
-      delete process.env.GEMINI_SANDBOX;
+      delete process.env.GROK_SANDBOX;
     }
     if (originalEnvSandbox !== undefined) {
       process.env.SANDBOX = originalEnvSandbox;

@@ -25,10 +25,10 @@ export const useAuthCommand = (
   // Never open auth dialog automatically, default to API key method
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
 
-  // Set default auth type to USE_GEMINI if none is set
+  // Set default auth type to LOCAL (Ollama) if none is set
   useEffect(() => {
     if (settings.merged.selectedAuthType === undefined) {
-      settings.setValue(SettingScope.User, 'selectedAuthType', AuthType.USE_GEMINI);
+      settings.setValue(SettingScope.User, 'selectedAuthType', AuthType.LOCAL);
     }
   }, [settings]);
 
@@ -83,6 +83,7 @@ export const useAuthCommand = (
 
   return {
     isAuthDialogOpen,
+    openAuthDialog,
     handleAuthSelect,
     handleAuthHighlight,
     isAuthenticating,

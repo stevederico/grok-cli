@@ -9,14 +9,21 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
 import { useStreamingContext } from '../contexts/StreamingContext.js';
-import { StreamingState } from '../types.js';
+import { StreamingState, AgentPhase } from '../types.js';
 import { LLMRespondingSpinner } from './LLMRespondingSpinner.js';
+
+const PHASE_LABELS: Record<AgentPhase, string> = {
+  thinking: 'Thinking...',
+  executing_tools: 'Executing tools...',
+  responding: 'Writing response...',
+};
 
 interface LoadingIndicatorProps {
   currentLoadingPhrase?: string;
   elapsedTime: number;
   rightContent?: React.ReactNode;
   thought?: ThoughtSummary | null;
+  agentPhase?: AgentPhase;
 }
 
 export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
@@ -24,6 +31,7 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
   elapsedTime,
   rightContent,
   thought,
+  agentPhase,
 }) => {
   const streamingState = useStreamingContext();
 
@@ -31,7 +39,9 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
     return null;
   }
 
-  const primaryText = thought?.subject || currentLoadingPhrase;
+  const phaseLabel = agentPhase ? PHASE_LABELS[agentPhase] : undefined;
+  const primaryText = thought?.subject || phaseLabel || currentLoadingPhrase;
+  const timerColor = elapsedTime < 5 ? Colors.AccentGreen : elapsedTime < 15 ? Colors.AccentYellow : Colors.AccentRed;
 
   return (
     <Box marginTop={1} paddingLeft={0} flexDirection="column">
@@ -47,11 +57,11 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
           />
         </Box>
         {primaryText && <Text color={Colors.AccentPurple}>{primaryText}</Text>}
-        <Text color={Colors.Gray}>
-          {streamingState === StreamingState.WaitingForConfirmation
-            ? ''
-            : ` (esc to cancel, ${elapsedTime}s)`}
-        </Text>
+        {streamingState !== StreamingState.WaitingForConfirmation && (
+          <Text color={Colors.Gray}>
+            {' (esc to cancel, '}<Text color={timerColor}>{elapsedTime}s</Text>{')'}
+          </Text>
+        )}
         <Box flexGrow={1}>{/* Spacer */}</Box>
         {rightContent && <Box>{rightContent}</Box>}
       </Box>

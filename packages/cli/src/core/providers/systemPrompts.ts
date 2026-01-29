@@ -30,11 +30,13 @@ Available tools help you:
 }
 
 /**
- * Get a minimal system prompt without tool instructions
- * Useful for simple queries that don't require tool access
+ * Plan-mode system prompt: instructs the AI to list changes without executing.
  */
-export function getMinimalSystemPrompt(): string {
-  return `You are an AI assistant helping with software development tasks.
+export const PLAN_MODE_PROMPT = `PLAN MODE: Before making any changes, present a numbered plan listing each file and what you will change. Do NOT call any tools. After presenting the plan, stop and wait for the user to approve.
 
-Current working directory: ${process.cwd()}`;
-}
+Format your plan like:
+1. **file/path.ts** - Description of change
+2. **file/path2.ts** - Description of change
+...
+
+Explain the rationale briefly after the list.`;

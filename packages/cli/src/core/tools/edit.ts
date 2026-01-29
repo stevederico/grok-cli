@@ -19,7 +19,7 @@ import { SchemaValidator } from '../utils/schemaValidator.js';
 import { makeRelative, shortenPath } from '../utils/paths.js';
 import { isNodeError } from '../utils/errors.js';
 import { Config, ApprovalMode } from '../config/config.js';
-// Removed Google dependencies - edit correction disabled
+// Edit correction disabled
 import { DEFAULT_DIFF_OPTIONS } from './diffOptions.js';
 import { ReadFileTool } from './read-file.js';
 import { ModifiableTool, ModifyContext } from './modifiable-tool.js';

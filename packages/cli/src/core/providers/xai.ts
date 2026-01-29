@@ -1,4 +1,4 @@
-import { Provider, ProviderConfig, QueryOptions, ToolCallResponse, ProviderToolCall } from './index.js';
+import { Provider, ProviderConfig, QueryOptions, ToolCallResponse, ProviderToolCall, StreamCallback, StreamChunk } from './index.js';
 import { tokenLimit } from '../core/tokenLimits.js';
 import { retryWithBackoff } from '../utils/retry.js';
 import { getSystemPrompt } from './systemPrompts.js';
@@ -282,7 +282,12 @@ export class XAIProvider extends Provider {
       
       if (data.choices && data.choices[0] && data.choices[0].message) {
         const message = data.choices[0].message;
-        
+        const usage = data.usage ? {
+          prompt_tokens: data.usage.prompt_tokens,
+          completion_tokens: data.usage.completion_tokens,
+          total_tokens: data.usage.total_tokens,
+        } : undefined;
+
         // Check for tool calls
         if (message.tool_calls && message.tool_calls.length > 0) {
           if (isDebugEnabled()) console.log(`🔧 XAI - Tool calls detected: ${message.tool_calls.length}`);
@@ -297,10 +302,11 @@ export class XAIProvider extends Provider {
           return {
             content: message.content,
             tool_calls: toolCalls,
+            usage,
           };
         }
-        
-        return { content: message.content };
+
+        return { content: message.content, usage };
       }
       
       throw new Error('Unexpected response format from XAI API');
@@ -308,6 +314,190 @@ export class XAIProvider extends Provider {
       console.error(`💥 XAI - Query failed with error:`, error);
       throw new Error(`XAI query failed: ${(error as Error).message}`);
     }
+  }
+
+  /**
+   * Streaming version: sends SSE stream=true, fires onChunk per token.
+   */
+  async queryWithToolsStreaming(
+    prompt: string,
+    tools: any[],
+    options: QueryOptions,
+    onChunk: StreamCallback,
+    signal?: AbortSignal,
+  ): Promise<ToolCallResponse> {
+    if (!this.isConfigured()) {
+      throw new Error('XAI: Provider not configured. Set XAI_API_KEY environment variable');
+    }
+
+    const model = options.model || this.model;
+    const temperature = options.temperature || 0.7;
+
+    let messages: any[] = [];
+
+    // Handle tool results continuation
+    if (options.tool_results && options.tool_results.length > 0) {
+      messages.push({ role: 'user', content: prompt });
+      const prevResponse = (options as any).previous_assistant_response;
+      if (prevResponse?.tool_calls) {
+        messages.push({
+          role: 'assistant',
+          content: prevResponse.content || null,
+          tool_calls: prevResponse.tool_calls.map((tc: ProviderToolCall) => ({
+            id: tc.id,
+            type: tc.type,
+            function: { name: tc.function.name, arguments: tc.function.arguments },
+          })),
+        });
+      }
+      const toolMessages = options.tool_results.map((r: any) => ({
+        role: 'tool',
+        content: r.content,
+        tool_call_id: r.tool_call_id,
+      }));
+      messages.push(...toolMessages);
+    } else {
+      messages.push({ role: 'system', content: getSystemPrompt() });
+      messages.push({ role: 'user', content: prompt });
+    }
+
+    messages = truncateToTokenLimit(messages, model, options.maxTokens || 2048);
+
+    const requestBody: any = {
+      model,
+      messages,
+      temperature,
+      max_tokens: options.maxTokens || 2048,
+      stream: true,
+      stream_options: { include_usage: true },
+    };
+
+    if (tools && tools.length > 0) {
+      requestBody.tools = tools.map((tool) => ({
+        type: 'function',
+        function: { name: tool.name, description: tool.description, parameters: tool.parameters || {} },
+      }));
+      requestBody.tool_choice = 'auto';
+    }
+
+    const fullEndpoint = `${this.endpoint}/chat/completions`;
+
+    const response = await retryWithBackoff(
+      async () => {
+        const res = await fetch(fullEndpoint, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          signal: signal || AbortSignal.timeout(60000),
+          body: JSON.stringify(requestBody),
+        });
+        if (!res.ok) {
+          const error = new Error(`XAI API error: ${res.status} ${res.statusText}`) as any;
+          error.status = res.status;
+          throw error;
+        }
+        return res;
+      },
+      { maxAttempts: 3, initialDelayMs: 1000, maxDelayMs: 10000 },
+    );
+
+    // Read SSE stream
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body for streaming');
+    }
+
+    const decoder = new TextDecoder();
+    let accumulatedContent = '';
+    const toolCallDeltas: Map<number, { id: string; name: string; arguments: string }> = new Map();
+    let buffer = '';
+    let usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // keep incomplete line in buffer
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data: ')) continue;
+          const data = trimmed.slice(6);
+          if (data === '[DONE]') {
+            onChunk({ type: 'done' });
+            continue;
+          }
+
+          try {
+            const parsed = JSON.parse(data);
+            // Capture usage from the final chunk
+            if (parsed.usage) {
+              usage = {
+                prompt_tokens: parsed.usage.prompt_tokens,
+                completion_tokens: parsed.usage.completion_tokens,
+                total_tokens: parsed.usage.total_tokens,
+              };
+            }
+            const delta = parsed.choices?.[0]?.delta;
+            if (!delta) continue;
+
+            // Content delta
+            if (delta.content) {
+              accumulatedContent += delta.content;
+              onChunk({ type: 'content', content: delta.content });
+            }
+
+            // Tool call deltas
+            if (delta.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                const idx = tc.index ?? 0;
+                if (!toolCallDeltas.has(idx)) {
+                  toolCallDeltas.set(idx, { id: tc.id || '', name: '', arguments: '' });
+                }
+                const existing = toolCallDeltas.get(idx)!;
+                if (tc.id) existing.id = tc.id;
+                if (tc.function?.name) existing.name += tc.function.name;
+                if (tc.function?.arguments) existing.arguments += tc.function.arguments;
+
+                onChunk({
+                  type: 'tool_call_delta',
+                  tool_call: {
+                    id: existing.id,
+                    type: 'function',
+                    function: { name: existing.name, arguments: existing.arguments },
+                  },
+                });
+              }
+            }
+          } catch {
+            // skip malformed JSON lines
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    // Build final response
+    const toolCalls: ProviderToolCall[] = [];
+    for (const [, tc] of toolCallDeltas) {
+      toolCalls.push({
+        id: tc.id,
+        type: 'function',
+        function: { name: tc.name, arguments: tc.arguments },
+      });
+    }
+
+    return {
+      content: accumulatedContent || undefined,
+      tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+      usage,
+    };
   }
 }
 

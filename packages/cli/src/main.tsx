@@ -33,7 +33,6 @@ import {
   sessionId,
   AuthType,
 } from './core/index.js';
-import { validateAuthMethod } from './config/auth.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
 
 function getNodeMemoryArgs(config: Config): string[] {
@@ -129,14 +128,6 @@ export async function main() {
   if (!process.env.SANDBOX) {
     const sandboxConfig = config.getSandbox();
     if (sandboxConfig) {
-      if (settings.merged.selectedAuthType) {
-        // Validate authentication here because the sandbox will interfere with auth flows
-        try {
-        } catch (err) {
-          console.error('Error authenticating:', err);
-          process.exit(1);
-        }
-      }
       await start_sandbox(sandboxConfig, memoryArgs);
       process.exit(0);
     } else {

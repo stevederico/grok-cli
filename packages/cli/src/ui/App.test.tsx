@@ -34,7 +34,7 @@ interface MockServerConfig {
   mcpServers?: Record<string, MCPServerConfig>; // Use imported MCPServerConfig
   userAgent: string;
   userMemory: string;
-  geminiMdFileCount: number;
+  grokMdFileCount: number;
   approvalMode: ApprovalMode;
   vertexai?: boolean;
   showMemoryUsage?: boolean;
@@ -57,15 +57,15 @@ interface MockServerConfig {
   getUserAgent: Mock<() => string>;
   getUserMemory: Mock<() => string>;
   setUserMemory: Mock<(newUserMemory: string) => void>;
-  getGeminiMdFileCount: Mock<() => number>;
-  setGeminiMdFileCount: Mock<(count: number) => void>;
+  getGrokMdFileCount: Mock<() => number>;
+  setGrokMdFileCount: Mock<(count: number) => void>;
   getApprovalMode: Mock<() => ApprovalMode>;
   setApprovalMode: Mock<(skip: ApprovalMode) => void>;
   getVertexAI: Mock<() => boolean | undefined>;
   getShowMemoryUsage: Mock<() => boolean>;
   getAccessibility: Mock<() => AccessibilitySettings>;
   getProjectRoot: Mock<() => string | undefined>;
-  getAllGeminiMdFilenames: Mock<() => string[]>;
+  getAllGrokMdFilenames: Mock<() => string[]>;
 }
 
 // Mock ../../core/src and its Config class
@@ -92,7 +92,7 @@ vi.mock('@grok-cli/core', async (importOriginal) => {
         mcpServers: opts.mcpServers,
         userAgent: opts.userAgent || 'test-agent',
         userMemory: opts.userMemory || '',
-        geminiMdFileCount: opts.geminiMdFileCount || 0,
+        grokMdFileCount: opts.grokMdFileCount || 0,
         approvalMode: opts.approvalMode ?? ApprovalMode.DEFAULT,
         vertexai: opts.vertexai,
         showMemoryUsage: opts.showMemoryUsage ?? false,
@@ -115,17 +115,17 @@ vi.mock('@grok-cli/core', async (importOriginal) => {
         getUserAgent: vi.fn(() => opts.userAgent || 'test-agent'),
         getUserMemory: vi.fn(() => opts.userMemory || ''),
         setUserMemory: vi.fn(),
-        getGeminiMdFileCount: vi.fn(() => opts.geminiMdFileCount || 0),
-        setGeminiMdFileCount: vi.fn(),
+        getGrokMdFileCount: vi.fn(() => opts.grokMdFileCount || 0),
+        setGrokMdFileCount: vi.fn(),
         getApprovalMode: vi.fn(() => opts.approvalMode ?? ApprovalMode.DEFAULT),
         setApprovalMode: vi.fn(),
         getVertexAI: vi.fn(() => opts.vertexai),
         getShowMemoryUsage: vi.fn(() => opts.showMemoryUsage ?? false),
         getAccessibility: vi.fn(() => opts.accessibility ?? {}),
         getProjectRoot: vi.fn(() => opts.projectRoot),
-        getGeminiClient: vi.fn(() => ({})),
+        getGrokClient: vi.fn(() => ({})),
         getCheckpointingEnabled: vi.fn(() => opts.checkpointing ?? true),
-        getAllGeminiMdFilenames: vi.fn(() => ['GROKCLI.md']),
+        getAllGrokMdFilenames: vi.fn(() => ['GROKCLI.md']),
         setFlashFallbackHandler: vi.fn(),
       };
     });
@@ -133,7 +133,7 @@ vi.mock('@grok-cli/core', async (importOriginal) => {
     ...actualCore,
     Config: ConfigClassMock,
     MCPServerConfig: actualCore.MCPServerConfig,
-    getAllGeminiMdFilenames: vi.fn(() => ['GROKCLI.md']),
+    getAllGrokMdFilenames: vi.fn(() => ['GROKCLI.md']),
   };
 });
 
@@ -167,7 +167,7 @@ vi.mock('../config/config.js', async (importOriginal) => {
   return {
     // @ts-expect-error - this is fine
     ...actual,
-    loadHierarchicalGeminiMemory: vi
+    loadHierarchicalGrokMemory: vi
       .fn()
       .mockResolvedValue({ memoryContent: '', fileCount: 0 }),
   };
@@ -202,7 +202,7 @@ describe('App UI', () => {
       targetDir: '/test/dir',
       debugMode: false,
       userMemory: '',
-      geminiMdFileCount: 0,
+      grokMdFileCount: 0,
       showMemoryUsage: false,
       sessionId: 'test-session-id',
       cwd: '/tmp',
@@ -228,7 +228,7 @@ describe('App UI', () => {
   });
 
   it('should display default "GROKCLI.md" in footer when contextFileName is not set and count is 1', async () => {
-    mockConfig.getGeminiMdFileCount.mockReturnValue(1);
+    mockConfig.getGrokMdFileCount.mockReturnValue(1);
     // For this test, ensure showMemoryUsage is false or debugMode is false if it relies on that
     mockConfig.getDebugMode.mockReturnValue(false);
     mockConfig.getShowMemoryUsage.mockReturnValue(false);
@@ -245,7 +245,7 @@ describe('App UI', () => {
   });
 
   it('should display default "GROKCLI.md" with plural when contextFileName is not set and count is > 1', async () => {
-    mockConfig.getGeminiMdFileCount.mockReturnValue(2);
+    mockConfig.getGrokMdFileCount.mockReturnValue(2);
     mockConfig.getDebugMode.mockReturnValue(false);
     mockConfig.getShowMemoryUsage.mockReturnValue(false);
 
@@ -265,7 +265,7 @@ describe('App UI', () => {
       contextFileName: 'AGENTS.md',
       theme: 'Default',
     });
-    mockConfig.getGeminiMdFileCount.mockReturnValue(1);
+    mockConfig.getGrokMdFileCount.mockReturnValue(1);
     mockConfig.getDebugMode.mockReturnValue(false);
     mockConfig.getShowMemoryUsage.mockReturnValue(false);
 
@@ -285,7 +285,7 @@ describe('App UI', () => {
       contextFileName: ['AGENTS.md', 'CONTEXT.md'],
       theme: 'Default',
     });
-    mockConfig.getGeminiMdFileCount.mockReturnValue(2);
+    mockConfig.getGrokMdFileCount.mockReturnValue(2);
     mockConfig.getDebugMode.mockReturnValue(false);
     mockConfig.getShowMemoryUsage.mockReturnValue(false);
 
@@ -305,7 +305,7 @@ describe('App UI', () => {
       contextFileName: 'MY_NOTES.TXT',
       theme: 'Default',
     });
-    mockConfig.getGeminiMdFileCount.mockReturnValue(3);
+    mockConfig.getGrokMdFileCount.mockReturnValue(3);
     mockConfig.getDebugMode.mockReturnValue(false);
     mockConfig.getShowMemoryUsage.mockReturnValue(false);
 
@@ -325,7 +325,7 @@ describe('App UI', () => {
       contextFileName: 'ANY_FILE.MD',
       theme: 'Default',
     });
-    mockConfig.getGeminiMdFileCount.mockReturnValue(0);
+    mockConfig.getGrokMdFileCount.mockReturnValue(0);
     mockConfig.getDebugMode.mockReturnValue(false);
     mockConfig.getShowMemoryUsage.mockReturnValue(false);
 
@@ -341,7 +341,7 @@ describe('App UI', () => {
   });
 
   it('should display GROKCLI.md and MCP server count when both are present', async () => {
-    mockConfig.getGeminiMdFileCount.mockReturnValue(2);
+    mockConfig.getGrokMdFileCount.mockReturnValue(2);
     mockConfig.getMcpServers.mockReturnValue({
       server1: {} as MCPServerConfig,
     });
@@ -360,7 +360,7 @@ describe('App UI', () => {
   });
 
   it('should display only MCP server count when GROKCLI.md count is 0', async () => {
-    mockConfig.getGeminiMdFileCount.mockReturnValue(0);
+    mockConfig.getGrokMdFileCount.mockReturnValue(0);
     mockConfig.getMcpServers.mockReturnValue({
       server1: {} as MCPServerConfig,
       server2: {} as MCPServerConfig,

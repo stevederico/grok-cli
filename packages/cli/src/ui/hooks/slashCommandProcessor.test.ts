@@ -67,7 +67,7 @@ import {
   MCPServerStatus,
   getMCPDiscoveryState,
   getMCPServerStatus,
-  GeminiClient,
+  GrokClient,
 } from '../../core/index.js';
 // @ts-expect-error - TSX import works at runtime despite TypeScript language server warning
 import { useSessionStats } from '../contexts/SessionContext.js';
@@ -101,7 +101,7 @@ describe('useSlashCommandProcessor', () => {
   let mockOpenModelDialog: ReturnType<typeof vi.fn>;
   let mockPerformMemoryRefresh: ReturnType<typeof vi.fn>;
   let mockSetQuittingMessages: ReturnType<typeof vi.fn>;
-  let mockGeminiClient: GeminiClient;
+  let mockGrokClient: GrokClient;
   let mockConfig: Config;
   let mockCorgiMode: ReturnType<typeof vi.fn>;
   const mockUseSessionStats = useSessionStats as Mock;
@@ -119,11 +119,11 @@ describe('useSlashCommandProcessor', () => {
     mockOpenModelDialog = vi.fn();
     mockPerformMemoryRefresh = vi.fn().mockResolvedValue(undefined);
     mockSetQuittingMessages = vi.fn();
-    mockGeminiClient = {
-    } as unknown as GeminiClient;
+    mockGrokClient = {
+    } as unknown as GrokClient;
     mockConfig = {
       getDebugMode: vi.fn(() => false),
-      getGeminiClient: () => mockGeminiClient,
+      getGrokClient: () => mockGrokClient,
       getSandbox: vi.fn(() => 'test-sandbox'),
       getModel: vi.fn(() => 'test-model'),
       getProjectRoot: vi.fn(() => '/test/dir'),
@@ -341,8 +341,7 @@ describe('useSlashCommandProcessor', () => {
     it('should show the about box with all details including auth and project', async () => {
       // Arrange
       mockGetCliVersionFn.mockResolvedValue('test-version');
-      process.env.SANDBOX = 'gemini-sandbox';
-      process.env.GOOGLE_CLOUD_PROJECT = 'test-gcp-project';
+      process.env.SANDBOX = 'grok-sandbox';
       vi.mocked(mockConfig.getModel).mockReturnValue('test-model-from-config');
 
       const settings = {
@@ -392,10 +391,9 @@ describe('useSlashCommandProcessor', () => {
           type: 'about',
           cliVersion: 'test-version',
           osVersion: 'test-platform',
-          sandboxEnv: 'gemini-sandbox',
+          sandboxEnv: 'grok-sandbox',
           modelVersion: 'test-model-from-config',
           selectedAuthType: 'test-auth-type',
-          gcpProject: 'test-gcp-project',
         }),
         expect.any(Number),
       );
@@ -441,7 +439,7 @@ describe('useSlashCommandProcessor', () => {
       const mockResetChat = vi.fn();
       mockConfig = {
         ...mockConfig,
-        getGeminiClient: () => ({
+        getGrokClient: () => ({
           resetChat: mockResetChat,
         }),
       } as unknown as Config;
@@ -490,7 +488,7 @@ describe('useSlashCommandProcessor', () => {
       const osVersion = 'test-platform test-node-version';
       let sandboxEnvStr = 'no sandbox';
       if (sandboxEnvVar && sandboxEnvVar !== 'sandbox-exec') {
-        sandboxEnvStr = sandboxEnvVar.replace(/^gemini-(?:code-)?/, '');
+        sandboxEnvStr = sandboxEnvVar.replace(/^grok-(?:code-)?/, '');
       } else if (sandboxEnvVar === 'sandbox-exec') {
         sandboxEnvStr = `sandbox-exec (${seatbeltProfileVar || 'unknown'})`;
       }
@@ -516,7 +514,7 @@ describe('useSlashCommandProcessor', () => {
 
     it('should call open with the correct GitHub issue URL and return true', async () => {
       mockGetCliVersionFn.mockResolvedValue('test-version');
-      process.env.SANDBOX = 'gemini-sandbox';
+      process.env.SANDBOX = 'grok-sandbox';
       process.env.SEATBELT_PROFILE = 'test_profile';
       const { handleSlashCommand } = getProcessor();
       const bugDescription = 'This is a test bug';

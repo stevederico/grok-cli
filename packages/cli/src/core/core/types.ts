@@ -7,13 +7,8 @@
 // Basic types for GrokCLI core functionality
 
 export enum AuthType {
-  GOOGLE_OAUTH = 'google_oauth',
-  API_KEY = 'api_key',
-  LOCAL = 'local',
-  // Legacy Google-specific auth types (for backward compatibility)
-  USE_GEMINI = 'use_gemini',
-  USE_VERTEX_AI = 'use_vertex_ai',
-  LOGIN_WITH_PROVIDER = 'login_with_google_personal',
+  API_KEY = 'api_key',      // xAI (requires XAI_API_KEY)
+  LOCAL = 'local',          // Ollama (no key needed)
 }
 
 export interface ContentGeneratorConfig {
@@ -83,7 +78,7 @@ export enum ToolConfirmationOutcome {
 
 // ApprovalMode defined in config/config.ts
 
-// Generic schema type to replace Google's Schema
+// Generic schema type
 export interface Schema extends Record<string, unknown> {
   type: string;
   properties?: Record<string, any>;
@@ -91,7 +86,7 @@ export interface Schema extends Record<string, unknown> {
   description?: string;
 }
 
-// Generic function declaration to replace Google's FunctionDeclaration
+// Generic function declaration
 export interface FunctionDeclaration {
   name: string;
   description: string;
@@ -167,9 +162,9 @@ export function clearCachedCredentialFile(): void {
 }
 
 // Placeholder client implementation
-export class GeminiClient implements LLMClient {
+export class GrokClient implements LLMClient {
   async query(prompt: string): Promise<string> {
-    throw new Error('GeminiClient is deprecated - use ProviderClient instead');
+    throw new Error('GrokClient is deprecated - use ProviderClient instead');
   }
   
   resetChat(): void {

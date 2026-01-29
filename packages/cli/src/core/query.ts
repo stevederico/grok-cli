@@ -12,7 +12,7 @@ import { QueryOptions } from './providers/index.js';
  */
 export async function runQuery(
   prompt: string, 
-  providerName: string = 'google',
+  providerName: string = 'grok',
   config: ProviderConfig = {},
   options: QueryOptions = {}
 ): Promise<string> {

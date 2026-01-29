@@ -1,10 +1,30 @@
 # Changelog
 
-## [0.3.2]
+## [0.3.3] - 2026-01-29
 
-  Update ASCII art
-  Default grok-code-fast-1
-  Fix tsconfig exclude
+### Fixed
+- Fix TypeScript build errors in cli config
+- Fix /stats token tracking always showing 0
+- Add usage extraction from xAI API responses
+- Wire up addUsage in provider stream hook
+
+## [0.3.2] - 2026-01-28
+
+### Changed
+- Update ASCII art
+- Default model to grok-code-fast-1
+- Fix tsconfig exclude
+
+### Fixed
+- Retry logic with exponential backoff and jitter for transient API errors
+- Debug logging gated behind `DEBUG=1` environment variable
+- Request timeouts (3s health checks, 30s queries)
+- Removed dead code (LruCache, messageInspectors, generateContentResponseUtilities)
+
+### Improved
+- Centralized system prompts into single source of truth
+- Standardized environment variable names (`GROKCLI_PROVIDER`, `GROKCLI_OLLAMA_ENDPOINT`)
+- Documentation cleanup: removed outdated Google/Gemini references
 
 ## [0.3.0] - 2025-07-15
 ### Added

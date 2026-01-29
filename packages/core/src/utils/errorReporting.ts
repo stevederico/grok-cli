@@ -7,7 +7,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { Content } from '../__stubs__/google-genai.js';
+import { Content } from '../__stubs__/types.js';
 
 interface ErrorReportData {
   error: { message: string; stack?: string } | { message: string };

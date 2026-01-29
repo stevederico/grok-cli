@@ -13,19 +13,20 @@ interface ErrorMessageProps {
 }
 
 export const ErrorMessage: React.FC<ErrorMessageProps> = ({ text }) => {
-  const prefix = '✕ ';
-  const prefixWidth = prefix.length;
+  const lines = text.split('\n');
 
   return (
-    <Box flexDirection="row" marginBottom={1}>
-      <Box width={prefixWidth}>
-        <Text color={Colors.AccentRed}>{prefix}</Text>
-      </Box>
-      <Box flexGrow={1}>
-        <Text wrap="wrap" color={Colors.AccentRed}>
-          {text}
-        </Text>
-      </Box>
+    <Box flexDirection="column" marginBottom={1}>
+      {lines.map((line, i) => (
+        <Box key={i} flexDirection="row">
+          <Text color={Colors.AccentRed}>{i === 0 ? '✕ │ ' : '  │ '}</Text>
+          <Box flexGrow={1}>
+            <Text wrap="wrap" color={Colors.AccentRed}>
+              {line}
+            </Text>
+          </Box>
+        </Box>
+      ))}
     </Box>
   );
 };

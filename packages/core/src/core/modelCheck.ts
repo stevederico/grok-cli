@@ -5,8 +5,8 @@
  */
 
 import {
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GROK_MODEL,
+  DEFAULT_GROK_FLASH_MODEL,
 } from '../config/models.js';
 
 /**
@@ -21,48 +21,11 @@ export async function getEffectiveModel(
   apiKey: string,
   currentConfiguredModel: string,
 ): Promise<string> {
-  if (currentConfiguredModel !== DEFAULT_GEMINI_MODEL) {
+  if (currentConfiguredModel !== DEFAULT_GROK_MODEL) {
     // Only check if the user is trying to use the specific pro model we want to fallback from.
     return currentConfiguredModel;
   }
 
-  const modelToTest = DEFAULT_GEMINI_MODEL;
-  const fallbackModel = DEFAULT_GEMINI_FLASH_MODEL;
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent?key=${apiKey}`;
-  const body = JSON.stringify({
-    contents: [{ parts: [{ text: 'test' }] }],
-    generationConfig: {
-      maxOutputTokens: 1,
-      temperature: 0,
-      topK: 1,
-      thinkingConfig: { thinkingBudget: 0, includeThoughts: false },
-    },
-  });
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000); // 500ms timeout for the request
-
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (response.status === 429) {
-      console.log(
-        `[INFO] Your configured model (${modelToTest}) was temporarily unavailable. Switched to ${fallbackModel} for this session.`,
-      );
-      return fallbackModel;
-    }
-    // For any other case (success, other error codes), we stick to the original model.
-    return currentConfiguredModel;
-  } catch (_error) {
-    clearTimeout(timeoutId);
-    // On timeout or any other fetch error, stick to the original model.
-    return currentConfiguredModel;
-  }
+  // Model check is a no-op for xAI provider - always use the configured model
+  return currentConfiguredModel;
 }

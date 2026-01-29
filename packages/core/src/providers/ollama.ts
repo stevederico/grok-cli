@@ -1,4 +1,4 @@
-import { Provider, ProviderConfig, QueryOptions } from './index.js';
+import { Provider, ProviderConfig, QueryOptions, ToolCallResponse, StreamCallback } from './index.js';
 import { env } from 'node:process';
 
 export class OllamaProvider extends Provider {
@@ -60,6 +60,85 @@ export class OllamaProvider extends Provider {
       throw new Error('Unexpected response format from Ollama API');
     } catch (error) {
       throw new Error(`Ollama query failed: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Streaming version using Ollama's NDJSON streaming (stream: true by default).
+   */
+  async queryWithToolsStreaming(
+    prompt: string,
+    _tools: any[],
+    options: QueryOptions,
+    onChunk: StreamCallback,
+    signal?: AbortSignal,
+  ): Promise<ToolCallResponse> {
+    const model = options.model || this.model;
+    const temperature = options.temperature || 0.7;
+
+    try {
+      const response = await fetch(`${this.endpoint}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: signal || AbortSignal.timeout(120000),
+        body: JSON.stringify({
+          model,
+          prompt,
+          stream: true,
+          options: {
+            temperature,
+            num_predict: options.maxTokens || 2048,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body for streaming');
+      }
+
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            try {
+              const parsed = JSON.parse(trimmed);
+              if (parsed.response) {
+                accumulatedContent += parsed.response;
+                onChunk({ type: 'content', content: parsed.response });
+              }
+              if (parsed.done) {
+                onChunk({ type: 'done' });
+              }
+            } catch {
+              // skip malformed lines
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      return { content: accumulatedContent || undefined };
+    } catch (error) {
+      throw new Error(`Ollama streaming query failed: ${(error as Error).message}`);
     }
   }
 }

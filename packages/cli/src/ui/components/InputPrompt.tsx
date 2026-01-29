@@ -43,7 +43,7 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   onClearScreen,
   config,
   slashCommands,
-  placeholder = '  Type your message or @path/to/file',
+  placeholder = '  Ask a question, @file for context, /help for commands',
   focus = true,
   inputWidth,
   suggestionsWidth,
@@ -373,6 +373,23 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     buffer.visualCursor;
   const scrollVisualRow = buffer.visualScrollRow;
 
+  // Contextual mode icon: ! shell, / command, @ file, > chat
+  const inputText = buffer.text.trimStart();
+  const modeIcon = shellModeActive
+    ? '! '
+    : inputText.startsWith('/')
+      ? '/ '
+      : inputText.startsWith('@')
+        ? '@ '
+        : '❯ ';
+  const modeColor = shellModeActive
+    ? Colors.AccentYellow
+    : inputText.startsWith('/')
+      ? Colors.AccentGreen
+      : inputText.startsWith('@')
+        ? Colors.AccentCyan
+        : Colors.AccentPurple;
+
   return (
     <>
       <Box
@@ -380,10 +397,8 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
         borderColor={shellModeActive ? Colors.AccentYellow : Colors.AccentBlue}
         paddingX={1}
       >
-        <Text
-          color={shellModeActive ? Colors.AccentYellow : Colors.AccentPurple}
-        >
-          {shellModeActive ? '! ' : '> '}
+        <Text color={modeColor}>
+          {modeIcon}
         </Text>
         <Box flexGrow={1} flexDirection="column">
           {buffer.text.length === 0 && placeholder ? (
@@ -444,6 +459,13 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
             scrollOffset={completion.visibleStartIndex}
             userInput={buffer.text}
           />
+        </Box>
+      )}
+      {buffer.text.length === 0 && !completion.showSuggestions && focus && (
+        <Box paddingLeft={2}>
+          <Text color={Colors.Gray} dimColor>
+            Enter send │ !shell │ /help │ @file
+          </Text>
         </Box>
       )}
     </>

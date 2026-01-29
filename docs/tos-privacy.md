@@ -43,4 +43,4 @@ For questions about these terms, please open an issue on the [GitHub repository]
 
 ---
 
-Last updated: July 15, 2025
+Last updated: January 28, 2026

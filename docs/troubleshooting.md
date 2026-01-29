@@ -4,16 +4,20 @@ This guide provides solutions to common issues and debugging tips.
 
 ## Authentication
 
-- **Error: `Failed to login. Message: Request contains an invalid argument`**
+- **Error: `XAI_API_KEY not set` or `Authentication failed`**
 
-  - Users with Google Workspace accounts, or users with Google Cloud accounts
-    associated with their Gmail accounts may not be able to activate the free
-    tier of the Google Code Assist plan.
-  - For Google Cloud accounts, you can work around this by setting
-    `GOOGLE_CLOUD_PROJECT` to your project ID.
-  - You can also grab an API key from [AI
-    Studio](http://aistudio.google.com/app/apikey), which also includes a
-    separate free tier.
+  - Ensure you have set the `XAI_API_KEY` environment variable with a valid API key from the xAI console.
+  - Verify the key is exported in your current shell session:
+    ```bash
+    echo $XAI_API_KEY
+    ```
+  - If using Ollama, ensure `GROKCLI_PROVIDER` is set to `ollama` and the Ollama service is running.
+
+- **Error: Ollama connection refused or timeout**
+
+  - Verify Ollama is running: `curl http://localhost:11434/api/tags`
+  - Check your endpoint configuration: `GROKCLI_OLLAMA_ENDPOINT` (preferred) or `OLLAMA_HOST`
+  - If Ollama is on a non-default port or remote host, update the endpoint accordingly.
 
 ## Frequently asked questions (FAQs)
 
@@ -23,11 +27,11 @@ This guide provides solutions to common issues and debugging tips.
 
 - **Q: Where are Grok CLI configuration files stored?**
 
-  - A: The CLI configuration is stored within two `settings.json` files: one in your home directory and one in your project's root directory. In both locations, `settings.json` is found in the `.grok-cli/` folder. Refer to [CLI Configuration](./cli/configuration.md) for more details.
+  - A: The CLI configuration is stored within two `settings.json` files: one in your home directory and one in your project's root directory. In both locations, `settings.json` is found in the `.grok-cli/` folder.
 
-- **Q: Why don't I see cached token counts in my stats output?**
+- **Q: How do I switch providers?**
 
-  - A: Cached token information is only displayed when cached tokens are being used. This feature is available for API key users (LLM API key or Vertex AI) but not for OAuth users (Google Personal/Enterprise accounts) at this time, as the Code Assist API does not support cached content creation. You can still view your total token usage with the `/stats` command.
+  - A: Use the `/provider` command interactively, or set the `GROKCLI_PROVIDER` environment variable to `grok` or `ollama`.
 
 ## Common error messages and solutions
 
@@ -55,19 +59,29 @@ This guide provides solutions to common issues and debugging tips.
 - **Error: "Operation not permitted", "Permission denied", or similar.**
 
   - **Cause:** If sandboxing is enabled, then the application is likely attempting an operation restricted by your sandbox, such as writing outside the project directory or system temp directory.
-  - **Solution:** See [Sandboxing](./cli/configuration.md#sandboxing) for more information, including how to customize your sandbox configuration.
+  - **Solution:** See [Sandboxing](./sandbox.md) for more information.
+
+- **Error: Request timeout or slow responses.**
+
+  - **Cause:** Network issues, provider API latency, or Ollama model loading.
+  - **Solution:**
+    1.  Check your internet connection (for xAI provider).
+    2.  For Ollama, the first request after loading a model may be slow. Subsequent requests should be faster.
+    3.  Run with `DEBUG=1 grok` to see detailed request/response timing.
 
 ## Debugging Tips
 
+- **Enable debug mode:**
+
+  - Run `DEBUG=1 grok` to enable verbose logging of API requests, retries, and internal state.
+
 - **CLI debugging:**
 
-  - Use the `--verbose` flag (if available) with CLI commands for more detailed output.
   - Check the CLI logs, often found in a user-specific configuration or cache directory.
 
 - **Core debugging:**
 
   - Check the server console output for error messages or stack traces.
-  - Increase log verbosity if configurable.
   - Use Node.js debugging tools (e.g., `node --inspect`) if you need to step through server-side code.
 
 - **Tool issues:**
@@ -75,8 +89,5 @@ This guide provides solutions to common issues and debugging tips.
   - If a specific tool is failing, try to isolate the issue by running the simplest possible version of the command or operation the tool performs.
   - For `run_shell_command`, check that the command works directly in your shell first.
   - For file system tools, double-check paths and permissions.
-
-- **Pre-flight checks:**
-  - Always run `npm run preflight` before committing code. This can catch many common issues related to formatting, linting, and type errors.
 
 If you encounter an issue not covered here, consider searching the project's issue tracker on GitHub or reporting a new issue with detailed information.

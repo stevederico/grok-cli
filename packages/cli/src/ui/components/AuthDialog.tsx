@@ -31,12 +31,8 @@ export function AuthDialog({
     initialErrorMessage || null,
   );
   const items = [
-    {
-      label: 'Login with Google',
-      value: AuthType.LOGIN_WITH_PROVIDER,
-    },
-    { label: 'Gemini API Key', value: AuthType.USE_GEMINI },
-    { label: 'Vertex AI', value: AuthType.USE_VERTEX_AI },
+    { label: 'xAI API Key', value: AuthType.API_KEY },
+    { label: 'Ollama (Local)', value: AuthType.LOCAL },
   ];
 
   let initialAuthIndex = items.findIndex(

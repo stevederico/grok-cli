@@ -10,12 +10,12 @@ import process from 'node:process';
 import {
   Config,
   loadServerHierarchicalMemory,
-  setGeminiMdFilename as setServerGeminiMdFilename,
-  getCurrentGeminiMdFilename,
+  setGrokMdFilename as setServerGrokMdFilename,
+  getCurrentGrokMdFilename,
   ApprovalMode,
   GROKCLI_CONFIG_DIR as GROKCLI_DIR,
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_GEMINI_EMBEDDING_MODEL,
+  DEFAULT_GROK_MODEL,
+  DEFAULT_GROK_EMBEDDING_MODEL,
   FileDiscoveryService,
 } from '../core/index.js';
 import { Settings } from './settings.js';
@@ -152,8 +152,7 @@ export async function loadHierarchicalMemory(
   );
 }
 
-// Legacy export for backward compatibility
-export const loadHierarchicalGeminiMemory = loadHierarchicalMemory;
+export const loadHierarchicalGrokMemory = loadHierarchicalMemory;
 
 export async function loadCliConfig(
   settings: Settings,
@@ -174,13 +173,13 @@ export async function loadCliConfig(
 
   // Set the context filename in the server's memoryTool module BEFORE loading memory
   // TODO(b/343434939): This is a bit of a hack. The contextFileName should ideally be passed
-  // directly to the Config constructor in core, and have core handle setGeminiMdFilename.
-  // However, loadHierarchicalGeminiMemory is called *before* createServerConfig.
+  // directly to the Config constructor in core, and have core handle setGrokMdFilename.
+  // However, loadHierarchicalGrokMemory is called *before* createServerConfig.
   if (settings.contextFileName) {
-    setServerGeminiMdFilename(settings.contextFileName);
+    setServerGrokMdFilename(settings.contextFileName);
   } else {
     // Reset to default if not provided in settings.
-    setServerGeminiMdFilename(getCurrentGeminiMdFilename());
+    setServerGrokMdFilename(getCurrentGrokMdFilename());
   }
 
   const extensionContextFilePaths = extensions.flatMap((e) => e.contextFiles);
@@ -205,7 +204,7 @@ export async function loadCliConfig(
   
   const configInstance = new Config({
     sessionId,
-    embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
+    embeddingModel: DEFAULT_GROK_EMBEDDING_MODEL,
     sandbox: sandboxConfig,
     targetDir: process.cwd(),
     debugMode,
@@ -218,8 +217,8 @@ export async function loadCliConfig(
     mcpServerCommand: settings.mcpServerCommand,
     mcpServers,
     userMemory: memoryContent,
-    geminiMdFileCount: fileCount,
-    geminiMdFilePaths: filePaths,
+    grokMdFileCount: fileCount,
+    grokMdFilePaths: filePaths,
     approvalMode: argv.yolo || false ? ApprovalMode.YOLO : ApprovalMode.DEFAULT,
     showMemoryUsage:
       argv.show_memory_usage || settings.showMemoryUsage || false,

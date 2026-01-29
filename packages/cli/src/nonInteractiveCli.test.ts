@@ -7,8 +7,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { runNonInteractive } from './nonInteractiveCli.js';
-import { Config, GeminiClient, ToolRegistry } from './core/index.js';
-import { GenerateContentResponse, Part, FunctionCall } from './core/__stubs__/google-genai.js';
+import { Config, GrokClient, ToolRegistry } from './core/index.js';
+import { GenerateContentResponse, Part, FunctionCall } from './core/__stubs__/types.js';
 
 // Mock dependencies
 vi.mock('@grok-cli/core', async () => {
@@ -17,7 +17,7 @@ vi.mock('@grok-cli/core', async () => {
   >('@grok-cli/core');
   return {
     ...actualCore,
-    GeminiClient: vi.fn(),
+    GrokClient: vi.fn(),
     ToolRegistry: vi.fn(),
     executeToolCall: vi.fn(),
   };
@@ -25,7 +25,7 @@ vi.mock('@grok-cli/core', async () => {
 
 describe('runNonInteractive', () => {
   let mockConfig: Config;
-  let mockGeminiClient: GeminiClient;
+  let mockGrokClient: GrokClient;
   let mockToolRegistry: ToolRegistry;
   let mockChat: {
     sendMessageStream: ReturnType<typeof vi.fn>;
@@ -38,20 +38,20 @@ describe('runNonInteractive', () => {
     mockChat = {
       sendMessageStream: vi.fn(),
     };
-    mockGeminiClient = {
+    mockGrokClient = {
       getChat: vi.fn().mockResolvedValue(mockChat),
-    } as unknown as GeminiClient;
+    } as unknown as GrokClient;
     mockToolRegistry = {
       getFunctionDeclarations: vi.fn().mockReturnValue([]),
       getTool: vi.fn(),
     } as unknown as ToolRegistry;
 
-    vi.mocked(GeminiClient).mockImplementation(() => mockGeminiClient);
+    vi.mocked(GrokClient).mockImplementation(() => mockGrokClient);
     vi.mocked(ToolRegistry).mockImplementation(() => mockToolRegistry);
 
     mockConfig = {
       getToolRegistry: vi.fn().mockReturnValue(mockToolRegistry),
-      getGeminiClient: vi.fn().mockReturnValue(mockGeminiClient),
+      getGrokClient: vi.fn().mockReturnValue(mockGrokClient),
       getContentGeneratorConfig: vi.fn().mockReturnValue({}),
     } as unknown as Config;
 

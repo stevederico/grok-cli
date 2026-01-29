@@ -30,7 +30,7 @@ export function createShowMemoryAction(
     }
 
     const currentMemory = config.getUserMemory();
-    const fileCount = config.getGeminiMdFileCount();
+    const fileCount = config.getGrokMdFileCount();
     const contextFileName = settings.merged.contextFileName;
     const contextFileNames = Array.isArray(contextFileName)
       ? contextFileName

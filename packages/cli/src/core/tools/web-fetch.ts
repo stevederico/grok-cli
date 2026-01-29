@@ -36,7 +36,7 @@ export interface WebFetchToolParams {
 }
 
 /**
- * Simplified WebFetch tool implementation without Google dependencies
+ * Simplified WebFetch tool implementation
  */
 export class WebFetchTool extends BaseTool<WebFetchToolParams, ToolResult> {
   static readonly Name: string = 'web_fetch';

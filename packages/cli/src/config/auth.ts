@@ -9,13 +9,14 @@ import { loadEnvironment } from './config.js';
 
 export const validateAuthMethod = (authMethod: string, provider?: string): string | null => {
   loadEnvironment();
-  
-  const effectiveProvider = provider || process.env.GROKCLI_PROVIDER || 'ollama';
-  
-  // Skip authentication for providers that don't require keys
-  if (effectiveProvider === 'ollama') {
+
+  if (authMethod === AuthType.API_KEY) {
+    if (!process.env.XAI_API_KEY) {
+      return 'XAI_API_KEY environment variable is not set. Please set it and try again.';
+    }
     return null;
   }
-  
+
+  // LOCAL (Ollama) needs no key
   return null;
 };

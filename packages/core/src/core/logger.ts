@@ -6,7 +6,7 @@
 
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import { Content } from '../__stubs__/google-genai.js';
+import { Content } from '../__stubs__/types.js';
 import { getProjectTempDir } from '../utils/paths.js';
 
 const LOG_FILE_NAME = 'logs.json';
@@ -25,7 +25,7 @@ export interface LogEntry {
 }
 
 export class Logger {
-  private geminiDir: string | undefined;
+  private grokDir: string | undefined;
   private logFilePath: string | undefined;
   private checkpointFilePath: string | undefined;
   private sessionId: string | undefined;
@@ -96,12 +96,12 @@ export class Logger {
       return;
     }
 
-    this.geminiDir = getProjectTempDir(process.cwd());
-    this.logFilePath = path.join(this.geminiDir, LOG_FILE_NAME);
-    this.checkpointFilePath = path.join(this.geminiDir, CHECKPOINT_FILE_NAME);
+    this.grokDir = getProjectTempDir(process.cwd());
+    this.logFilePath = path.join(this.grokDir, LOG_FILE_NAME);
+    this.checkpointFilePath = path.join(this.grokDir, CHECKPOINT_FILE_NAME);
 
     try {
-      await fs.mkdir(this.geminiDir, { recursive: true });
+      await fs.mkdir(this.grokDir, { recursive: true });
       let fileExisted = true;
       try {
         await fs.access(this.logFilePath);
@@ -235,13 +235,13 @@ export class Logger {
   }
 
   _checkpointPath(tag: string | undefined): string {
-    if (!this.checkpointFilePath || !this.geminiDir) {
+    if (!this.checkpointFilePath || !this.grokDir) {
       throw new Error('Checkpoint file path not set.');
     }
     if (!tag) {
       return this.checkpointFilePath;
     }
-    return path.join(this.geminiDir, `checkpoint-${tag}.json`);
+    return path.join(this.grokDir, `checkpoint-${tag}.json`);
   }
 
   async saveCheckpoint(conversation: Content[], tag?: string): Promise<void> {

@@ -9,9 +9,9 @@ import { render } from 'ink-testing-library';
 import { act } from 'react-dom/test-utils';
 import { SessionStatsProvider, useSessionStats } from './SessionContext.js';
 import { describe, it, expect, vi } from 'vitest';
-import { GenerateContentResponseUsageMetadata } from '../../core/__stubs__/google-genai.js';
+import { GenerateContentResponseUsageMetadata } from '../../core/__stubs__/types.js';
 
-// Mock data that simulates what the Gemini API would return.
+// Mock data that simulates what the Grok API would return.
 const mockMetadata1: GenerateContentResponseUsageMetadata = {
   promptTokenCount: 100,
   candidatesTokenCount: 200,

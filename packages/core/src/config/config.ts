@@ -20,16 +20,17 @@ import { EditTool } from '../tools/edit.js';
 import { ShellTool } from '../tools/shell.js';
 import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
+import { WebSearchTool } from '../tools/web-search.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
-import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
-import { GeminiClient } from '../core/types.js';
+import { MemoryTool, setGrokMdFilename } from '../tools/memoryTool.js';
+import { GrokClient } from '../core/types.js';
 import { GROKCLI_CONFIG_DIR as GROKCLI_DIR } from '../tools/memoryTool.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { GitService } from '../services/gitService.js';
 import { getProjectTempDir } from '../utils/paths.js';
 import {
-  DEFAULT_GEMINI_EMBEDDING_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GROK_EMBEDDING_MODEL,
+  DEFAULT_GROK_FLASH_MODEL,
 } from './models.js';
 
 export enum ApprovalMode {
@@ -93,8 +94,8 @@ export interface ConfigParameters {
   mcpServerCommand?: string;
   mcpServers?: Record<string, MCPServerConfig>;
   userMemory?: string;
-  geminiMdFileCount?: number;
-  geminiMdFilePaths?: string[];
+  grokMdFileCount?: number;
+  grokMdFilePaths?: string[];
   approvalMode?: ApprovalMode;
   showMemoryUsage?: boolean;
   contextFileName?: string | string[];
@@ -130,12 +131,12 @@ export class Config {
   private readonly mcpServerCommand: string | undefined;
   private readonly mcpServers: Record<string, MCPServerConfig> | undefined;
   private userMemory: string;
-  private geminiMdFileCount: number;
-  private geminiMdFilePaths: string[];
+  private grokMdFileCount: number;
+  private grokMdFilePaths: string[];
   private approvalMode: ApprovalMode;
   private readonly showMemoryUsage: boolean;
   private readonly accessibility: AccessibilitySettings;
-  private geminiClient!: GeminiClient;
+  private grokClient!: GrokClient;
   private readonly fileFiltering: {
     respectGitIgnore: boolean;
     enableRecursiveFileSearch: boolean;
@@ -155,7 +156,7 @@ export class Config {
   constructor(params: ConfigParameters) {
     this.sessionId = params.sessionId;
     this.embeddingModel =
-      params.embeddingModel ?? DEFAULT_GEMINI_EMBEDDING_MODEL;
+      params.embeddingModel ?? DEFAULT_GROK_EMBEDDING_MODEL;
     this.sandbox = params.sandbox;
     this.targetDir = path.resolve(params.targetDir);
     this.debugMode = params.debugMode;
@@ -168,8 +169,8 @@ export class Config {
     this.mcpServerCommand = params.mcpServerCommand;
     this.mcpServers = params.mcpServers;
     this.userMemory = params.userMemory ?? '';
-    this.geminiMdFileCount = params.geminiMdFileCount ?? 0;
-    this.geminiMdFilePaths = params.geminiMdFilePaths ?? [];
+    this.grokMdFileCount = params.grokMdFileCount ?? 0;
+    this.grokMdFilePaths = params.grokMdFilePaths ?? [];
     this.approvalMode = params.approvalMode ?? ApprovalMode.DEFAULT;
     this.showMemoryUsage = params.showMemoryUsage ?? false;
     this.accessibility = params.accessibility ?? {};
@@ -189,14 +190,12 @@ export class Config {
     this.extensionContextFilePaths = params.extensionContextFilePaths ?? [];
 
     if (params.contextFileName) {
-      setGeminiMdFilename(params.contextFileName);
+      setGrokMdFilename(params.contextFileName);
     }
 
   }
 
   async refreshAuth(authMethod: AuthType) {
-    const provider = this.getProvider();
-    
     // Always use the original default model when switching auth methods
     const modelToUse = this.model;
     
@@ -204,38 +203,19 @@ export class Config {
     // the previous session's model (which might be Flash)
     this.contentGeneratorConfig = undefined!;
 
-    if (provider === 'google') {
-      // Google provider removed - redirect to alternative
-      throw new Error('Google Gemini provider has been removed. Please use "grok" or "ollama" providers instead.');
-      
-      // Legacy code kept for reference (commented out):
-      // const contentConfig = await createContentGeneratorConfig({
-      //   model: modelToUse,
-      //   authType: authMethod,
-      // });
-      // 
-      // const gc = new GeminiClient(this);
-      // this.geminiClient = gc;
-      // this.toolRegistry = await createToolRegistry(this);
-      // await gc.initialize(contentConfig);
-      // this.contentGeneratorConfig = contentConfig;
-    } else {
-      // For non-Google providers, skip traditional auth
-      // They use API keys or local services that don't need OAuth flows
-      this.toolRegistry = await createToolRegistry(this);
-      
-      // Create a minimal content config for non-Google providers
-      this.contentGeneratorConfig = createContentGeneratorConfig({
-        model: modelToUse,
-        authType: authMethod,
-        // Other fields are not used by non-Google providers
-      });
-      
-      // Initialize a generic client instead of GeminiClient
-      const { ProviderClient } = await import('../core/providerClient.js');
-      this.geminiClient = new ProviderClient(this) as any; // Type cast for compatibility
-      await (this.geminiClient as any).initialize(authMethod);
-    }
+    // Providers use API keys or local services that don't need OAuth flows
+    this.toolRegistry = await createToolRegistry(this);
+
+    // Create a minimal content config
+    this.contentGeneratorConfig = createContentGeneratorConfig({
+      model: modelToUse,
+      authType: authMethod,
+    });
+
+    // Initialize the provider client
+    const { ProviderClient } = await import('../core/providerClient.js');
+    this.grokClient = new ProviderClient(this) as any; // Type cast for compatibility
+    await (this.grokClient as any).initialize(authMethod);
 
     // Reset the session flag since we're explicitly changing auth and using default model
     this.modelSwitchedDuringSession = false;
@@ -349,20 +329,20 @@ export class Config {
     this.userMemory = newUserMemory;
   }
 
-  getGeminiMdFileCount(): number {
-    return this.geminiMdFileCount;
+  getGrokMdFileCount(): number {
+    return this.grokMdFileCount;
   }
 
-  getGeminiMdFilePaths(): string[] {
-    return this.geminiMdFilePaths;
+  getGrokMdFilePaths(): string[] {
+    return this.grokMdFilePaths;
   }
 
-  setGeminiMdFileCount(count: number): void {
-    this.geminiMdFileCount = count;
+  setGrokMdFileCount(count: number): void {
+    this.grokMdFileCount = count;
   }
 
-  setGeminiMdFilePaths(paths: string[]): void {
-    this.geminiMdFilePaths = paths;
+  setGrokMdFilePaths(paths: string[]): void {
+    this.grokMdFilePaths = paths;
   }
 
   getApprovalMode(): ApprovalMode {
@@ -385,11 +365,11 @@ export class Config {
     return false; // Usage statistics disabled for privacy
   }
 
-  getGeminiClient(): GeminiClient {
-    return this.geminiClient;
+  getGrokClient(): GrokClient {
+    return this.grokClient;
   }
 
-  getGeminiDir(): string {
+  getGrokDir(): string {
     return path.join(this.targetDir, GROKCLI_DIR);
   }
 
@@ -475,6 +455,7 @@ export function createToolRegistry(config: Config): Promise<ToolRegistry> {
   registerCoreTool(EditTool, config);
   registerCoreTool(WriteFileTool, config);
   registerCoreTool(WebFetchTool, config);
+  registerCoreTool(WebSearchTool, config);
   registerCoreTool(ReadManyFilesTool, targetDir, config);
   registerCoreTool(ShellTool, config);
   registerCoreTool(MemoryTool);
@@ -485,4 +466,4 @@ export function createToolRegistry(config: Config): Promise<ToolRegistry> {
 }
 
 // Export model constants for use in CLI
-export { DEFAULT_GEMINI_FLASH_MODEL };
+export { DEFAULT_GROK_FLASH_MODEL };

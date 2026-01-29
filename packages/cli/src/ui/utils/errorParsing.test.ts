@@ -11,7 +11,7 @@ import { AuthType, StructuredError } from '../../core/index.js';
 describe('parseAndFormatApiError', () => {
   const enterpriseMessage = 'upgrade to a plan with higher limits';
   const vertexMessage = 'request a quota increase through Vertex';
-  const geminiMessage = 'request a quota increase through AI Studio';
+  const grokMessage = 'request a quota increase through AI Studio';
 
   it('should format a valid API error JSON', () => {
     const errorMessage =
@@ -74,7 +74,7 @@ describe('parseAndFormatApiError', () => {
       error: {
         code: 429,
         message:
-          "Gemini 2.5 Pro Preview doesn't have a free quota tier. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.",
+          "Grok 2.5 Pro Preview doesn't have a free quota tier. For more information on this error, head to: https://docs.x.ai/docs/rate-limits.",
         status: 'RESOURCE_EXHAUSTED',
       },
     });
@@ -87,9 +87,9 @@ describe('parseAndFormatApiError', () => {
       },
     });
 
-    const result = parseAndFormatApiError(errorMessage, AuthType.USE_GEMINI);
-    expect(result).toContain('Gemini 2.5 Pro Preview');
-    expect(result).toContain(geminiMessage);
+    const result = parseAndFormatApiError(errorMessage, AuthType.USE_GROK);
+    expect(result).toContain('Grok 2.5 Pro Preview');
+    expect(result).toContain(grokMessage);
   });
 
   it('should format a StructuredError', () => {

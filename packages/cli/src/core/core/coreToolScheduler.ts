@@ -16,7 +16,7 @@ import {
   EditorType,
   Config,
 } from '../index.js';
-// Removed Google dependencies - using local types instead
+// Using local types
 type Part = Record<string, any>;
 type PartListUnion = string | Part | Part[];
 
@@ -122,7 +122,7 @@ export type AllToolCallsCompleteHandler = (
 export type ToolCallsUpdateHandler = (toolCalls: ToolCall[]) => void;
 
 /**
- * Formats tool output for a Gemini FunctionResponse.
+ * Formats tool output for a Grok FunctionResponse.
  */
 function createFunctionResponsePart(
   callId: string,

@@ -15,7 +15,7 @@ vi.mock('../utils/editCorrector.js', () => ({
 }));
 
 vi.mock('../core/client.js', () => ({
-  GeminiClient: vi.fn().mockImplementation(() => ({
+  GrokClient: vi.fn().mockImplementation(() => ({
     generateJson: mockGenerateJson,
   })),
 }));
@@ -31,7 +31,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { ApprovalMode, Config } from '../config/config.js';
-import { Content, Part, SchemaUnion } from '../__stubs__/google-genai.js';
+import { Content, Part, SchemaUnion } from '../__stubs__/types.js';
 
 describe('EditTool', () => {
   let tool: EditTool;
@@ -50,13 +50,13 @@ describe('EditTool', () => {
     };
 
     mockConfig = {
-      getGeminiClient: vi
+      getGrokClient: vi
         .fn()
         .mockReturnValue(mockClientInstanceWithGenerateJson),
       getTargetDir: () => rootDir,
       getApprovalMode: vi.fn(),
       setApprovalMode: vi.fn(),
-      // getGeminiConfig: () => ({ apiKey: 'test-api-key' }), // This was not a real Config method
+      // getGrokConfig: () => ({ apiKey: 'test-api-key' }), // This was not a real Config method
       // Add other properties/methods of Config if EditTool uses them
       // Minimal other methods to satisfy Config type if needed by EditTool constructor or other direct uses:
       getApiKey: () => 'test-api-key',
@@ -72,8 +72,8 @@ describe('EditTool', () => {
       getUserAgent: () => 'test-agent',
       getUserMemory: () => '',
       setUserMemory: vi.fn(),
-      getGeminiMdFileCount: () => 0,
-      setGeminiMdFileCount: vi.fn(),
+      getGrokMdFileCount: () => 0,
+      setGrokMdFileCount: vi.fn(),
       getToolRegistry: () => ({}) as any, // Minimal mock for ToolRegistry
     } as unknown as Config;
 

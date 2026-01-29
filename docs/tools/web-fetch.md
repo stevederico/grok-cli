@@ -21,7 +21,7 @@ If the LLM API cannot access the URL, the tool will fall back to fetching conten
 Usage:
 
 ```
-web_fetch(prompt="Your prompt, including a URL such as https://google.com.")
+web_fetch(prompt="Your prompt, including a URL such as https://example.com.")
 ```
 
 ## `web_fetch` examples

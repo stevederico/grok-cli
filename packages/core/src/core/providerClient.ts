@@ -10,24 +10,15 @@ import { AuthType } from './types.js';
 
 /**
  * Provider-agnostic client that works with all providers
- * Replaces the Google-specific GeminiClient for interactive mode
+ * Provider client for interactive mode
  */
 export class ProviderClient {
   constructor(private config: Config) {}
 
   async initialize(authMethod?: AuthType): Promise<void> {
-    // For non-Google providers, initialization is handled by the provider system
+    // Initialization is handled by the provider system
     const provider = this.config.getProvider();
-    
-    if (provider === 'google') {
-      // For Google, we still need the traditional auth flow
-      // This will be handled separately if needed
-      console.debug('Google provider initialization would go here');
-    } else {
-      // For other providers (ollama, grok, etc.), no special initialization needed
-      // They use API keys or local services
-      console.debug(`Provider ${provider} initialized successfully`);
-    }
+    console.debug(`Provider ${provider} initialized successfully`);
   }
 
   /**
@@ -85,11 +76,7 @@ export class ProviderClient {
         providerConfig.apiKey = process.env.XAI_API_KEY || '';
         providerConfig.model = process.env.XAI_MODEL;
         break;
-      
-      case 'google':
-        // Google config would be handled by the existing GeminiClient
-        break;
-      
+
       default:
         console.warn(`Unknown provider: ${provider}`);
     }
@@ -113,11 +100,7 @@ export class ProviderClient {
         case 'grok':
           const apiKey = process.env.XAI_API_KEY;
           return !!apiKey;
-        
-        case 'google':
-          // Would check Google auth
-          return true;
-        
+
         default:
           return false;
       }

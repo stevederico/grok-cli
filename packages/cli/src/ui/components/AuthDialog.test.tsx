@@ -17,7 +17,7 @@ describe('AuthDialog', () => {
     const settings: LoadedSettings = new LoadedSettings(
       {
         settings: {
-          selectedAuthType: AuthType.USE_GEMINI,
+          selectedAuthType: AuthType.USE_GROK,
         },
         path: '',
       },
@@ -33,12 +33,12 @@ describe('AuthDialog', () => {
         onSelect={() => {}}
         onHighlight={() => {}}
         settings={settings}
-        initialErrorMessage="GEMINI_API_KEY  environment variable not found"
+        initialErrorMessage="GROK_API_KEY  environment variable not found"
       />,
     );
 
     expect(lastFrame()).toContain(
-      'GEMINI_API_KEY  environment variable not found',
+      'GROK_API_KEY  environment variable not found',
     );
   });
 
@@ -84,7 +84,7 @@ describe('AuthDialog', () => {
     const settings: LoadedSettings = new LoadedSettings(
       {
         settings: {
-          selectedAuthType: AuthType.USE_GEMINI,
+          selectedAuthType: AuthType.USE_GROK,
         },
         path: '',
       },

@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join('.grokcli', 'extensions');
-export const EXTENSIONS_CONFIG_FILENAME = 'gemini-extension.json';
+export const EXTENSIONS_CONFIG_FILENAME = 'grok-extension.json';
 
 export interface Extension {
   config: ExtensionConfig;

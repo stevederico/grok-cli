@@ -8,15 +8,15 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import { GEMINI_DIR } from './paths.js';
+import { GROK_DIR } from './paths.js';
 
 const homeDir = os.homedir() ?? '';
-const geminiDir = path.join(homeDir, GEMINI_DIR);
-const userIdFile = path.join(geminiDir, 'user_id');
+const grokDir = path.join(homeDir, GROK_DIR);
+const userIdFile = path.join(grokDir, 'user_id');
 
-function ensureGeminiDirExists() {
-  if (!fs.existsSync(geminiDir)) {
-    fs.mkdirSync(geminiDir, { recursive: true });
+function ensureGrokDirExists() {
+  if (!fs.existsSync(grokDir)) {
+    fs.mkdirSync(grokDir, { recursive: true });
   }
 }
 
@@ -39,7 +39,7 @@ function writeUserIdToFile(userId: string) {
  */
 export function getPersistentUserId(): string {
   try {
-    ensureGeminiDirExists();
+    ensureGrokDirExists();
     let userId = readUserIdFromFile();
 
     if (!userId) {

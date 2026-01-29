@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { type PartListUnion } from '../../core/__stubs__/google-genai.js';
+import { type PartListUnion } from '../../core/__stubs__/types.js';
 import open from 'open';
 import process from 'node:process';
 import { UseHistoryManagerReturn } from './useHistoryManager.js';
@@ -21,7 +21,7 @@ import {
   validateProvider,
   getProvider,
 } from '../../core/index.js';
-import { useSessionStats } from '../contexts/SessionContext.js';
+import { useSessionStats, calculateCost, MODEL_PRICING } from '../contexts/SessionContext.js';
 import {
   Message,
   MessageType,
@@ -79,6 +79,8 @@ export const useSlashCommandProcessor = (
   openPrivacyNotice: () => void,
   openProviderDialog: () => void,
   openModelDialog: () => void,
+  openThemeDialog: () => void,
+  openAuthDialog: () => void,
 ) => {
   const session = useSessionStats();
   const gitService = useMemo(() => {
@@ -221,7 +223,7 @@ export const useSlashCommandProcessor = (
         action: async (_mainCommand, _subCommand, _args) => {
           onDebugMessage('Clearing terminal and resetting chat.');
           clearItems();
-          await config?.getGeminiClient()?.resetChat();
+          await config?.getGrokClient()?.resetChat();
           console.clear();
           refreshStatic();
         },
@@ -270,6 +272,65 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
             stats: cumulative,
             lastTurnStats: currentTurn,
             duration: formatDuration(wallDuration),
+            timestamp: new Date(),
+          });
+        },
+      },
+      {
+        name: 'plan',
+        description: 'plan changes before executing (e.g. /plan refactor auth)',
+        action: (_mainCommand, _subCommand, args) => {
+          const trimmedArgs = (args || '').trim();
+          addMessage({
+            type: MessageType.INFO,
+            content: trimmedArgs
+              ? `Plan mode: submit via the input prompt as "/plan ${trimmedArgs}"`
+              : 'Usage: /plan <description of task>',
+            timestamp: new Date(),
+          });
+        },
+      },
+      {
+        name: 'cost',
+        description: 'show cost breakdown for this session',
+        action: (_mainCommand, _subCommand, _args) => {
+          const { cumulative, currentTurn } = session.stats;
+          const model = config?.getModel() || 'unknown';
+
+          const sessionCost = calculateCost(
+            cumulative.promptTokenCount,
+            cumulative.candidatesTokenCount,
+            model,
+          );
+          const turnCost = calculateCost(
+            currentTurn.promptTokenCount,
+            currentTurn.candidatesTokenCount,
+            model,
+          );
+
+          const pricing = MODEL_PRICING[model];
+          const pricingInfo = pricing
+            ? `$${pricing.input.toFixed(2)}/$${pricing.output.toFixed(2)} per 1M tokens`
+            : 'free / unknown pricing';
+
+          const lines = [
+            `\u001b[1mCost Dashboard\u001b[0m`,
+            ``,
+            `  Model:           ${model}`,
+            `  Pricing:         ${pricingInfo}`,
+            ``,
+            `  \u001b[36mSession Total:\u001b[0m    $${sessionCost.toFixed(6)}`,
+            `    Input tokens:  ${cumulative.promptTokenCount.toLocaleString()}`,
+            `    Output tokens: ${cumulative.candidatesTokenCount.toLocaleString()}`,
+            ``,
+            `  \u001b[36mLast Turn:\u001b[0m        $${turnCost.toFixed(6)}`,
+            `    Input tokens:  ${currentTurn.promptTokenCount.toLocaleString()}`,
+            `    Output tokens: ${currentTurn.candidatesTokenCount.toLocaleString()}`,
+          ];
+
+          addMessage({
+            type: MessageType.INFO,
+            content: lines.join('\n'),
             timestamp: new Date(),
           });
         },
@@ -1056,7 +1117,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
           const tag = (args || '').trim();
           const logger = new Logger(config?.getSessionId() || '');
           await logger.initialize();
-          const chat = await config?.getGeminiClient()?.getChat();
+          const chat = await config?.getGrokClient()?.getChat();
           if (!chat) {
             addMessage({
               type: MessageType.ERROR,
@@ -1109,7 +1170,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
               chat.clearHistory();
               const rolemap: { [key: string]: MessageType } = {
                 user: MessageType.USER,
-                model: MessageType.GEMINI,
+                model: MessageType.GROK,
               };
               let hasSystemPrompt = false;
               let i = 0;
@@ -1136,7 +1197,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
                   addItem(
                     {
                       type:
-                        (item.role && rolemap[item.role]) || MessageType.GEMINI,
+                        (item.role && rolemap[item.role]) || MessageType.GROK,
                       text,
                     } as HistoryItemWithoutId,
                     i,
@@ -1196,13 +1257,100 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
           }, 100);
         },
       },
+      {
+        name: 'theme',
+        description: 'open theme selection dialog',
+        action: () => {
+          openThemeDialog();
+        },
+      },
+      {
+        name: 'auth',
+        description: 'open authentication method dialog',
+        action: () => {
+          openAuthDialog();
+        },
+      },
+      {
+        name: 'compress',
+        description: 'replace chat context with a compressed summary to reduce token usage',
+        action: async () => {
+          try {
+            const chat = await config?.getGrokClient()?.getChat();
+            if (!chat) {
+              addMessage({
+                type: MessageType.ERROR,
+                content: 'No chat client available for compression.',
+                timestamp: new Date(),
+              });
+              return;
+            }
+
+            const chatHistory = chat.getHistory();
+            if (chatHistory.length === 0 && history.length === 0) {
+              addMessage({
+                type: MessageType.INFO,
+                content: 'Nothing to compress — conversation is empty.',
+                timestamp: new Date(),
+              });
+              return;
+            }
+
+            // Build condensed text from history
+            const condensedParts: string[] = [];
+            for (const item of history) {
+              if (item.type === 'user' && item.text) {
+                condensedParts.push(`User: ${item.text}`);
+              } else if (item.type === 'assistant' && item.text) {
+                const truncated = item.text.length > 200
+                  ? item.text.substring(0, 200) + '...'
+                  : item.text;
+                condensedParts.push(`Assistant: ${truncated}`);
+              }
+            }
+
+            const compressedSummary = condensedParts.length > 0
+              ? `[Compressed conversation context]\n${condensedParts.join('\n')}`
+              : '[Compressed conversation context]\n(no extractable messages)';
+
+            // Clear UI history and chat client history
+            clearItems();
+            chat.clearHistory();
+
+            // Add compressed summary as info message in UI
+            addMessage({
+              type: MessageType.INFO,
+              content: `Conversation compressed. ${condensedParts.length} messages summarized.`,
+              timestamp: new Date(),
+            });
+
+            // Re-add compressed content to chat client so LLM has context
+            chat.addHistory({
+              role: 'user',
+              parts: [{ text: compressedSummary }],
+            });
+            chat.addHistory({
+              role: 'model',
+              parts: [{ text: 'Understood. I have the compressed context of our previous conversation. How can I help?' }],
+            });
+
+            console.clear();
+            refreshStatic();
+          } catch (error) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Error compressing conversation: ${error instanceof Error ? error.message : String(error)}`,
+              timestamp: new Date(),
+            });
+          }
+        },
+      },
     ];
 
-    if (config?.getCheckpointingEnabled()) {
-      commands.push({
-        name: 'restore',
-        description:
-          'restore a tool call. This will reset the conversation and file history to the state it was in when the tool call was suggested',
+    commands.push({
+      name: 'restore',
+      description:
+        'restore a tool call. This will reset the conversation and file history to the state it was in when the tool call was suggested',
         completion: async () => {
           const checkpointDir = config?.getProjectTempDir()
             ? path.join(config.getProjectTempDir(), 'checkpoints')
@@ -1220,6 +1368,14 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
           }
         },
         action: async (_mainCommand, subCommand, _args) => {
+          if (!config?.getCheckpointingEnabled()) {
+            addMessage({
+              type: MessageType.INFO,
+              content: 'Checkpointing is not enabled. Enable it to use /restore.',
+              timestamp: new Date(),
+            });
+            return;
+          }
           const checkpointDir = config?.getProjectTempDir()
             ? path.join(config.getProjectTempDir(), 'checkpoints')
             : undefined;
@@ -1288,7 +1444,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
 
             if (toolCallData.clientHistory) {
               await config
-                ?.getGeminiClient()
+                ?.getGrokClient()
                 ?.setHistory(toolCallData.clientHistory);
             }
 
@@ -1317,7 +1473,6 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
           }
         },
       });
-    }
     return commands;
   }, [
     onDebugMessage,
@@ -1340,6 +1495,8 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
     addItem,
     setQuittingMessages,
     openPrivacyNotice,
+    openThemeDialog,
+    openAuthDialog,
   ]);
 
   const handleSlashCommand = useCallback(

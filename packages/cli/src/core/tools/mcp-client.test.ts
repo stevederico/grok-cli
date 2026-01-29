@@ -15,7 +15,7 @@ import {
   Mocked,
 } from 'vitest';
 import { discoverMcpTools, sanatizeParameters } from './mcp-client.js';
-import { Schema, Type } from '../__stubs__/google-genai.js';
+import { Schema, Type } from '../__stubs__/types.js';
 import { Config, MCPServerConfig } from '../config/config.js';
 import { DiscoveredMCPTool } from './mcp-tool.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';

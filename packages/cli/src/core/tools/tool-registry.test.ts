@@ -28,7 +28,7 @@ import {
   CallableTool,
   mcpToTool,
   Type,
-} from '../__stubs__/google-genai.js';
+} from '../__stubs__/types.js';
 import { execSync } from 'node:child_process';
 
 // Use vi.hoisted to define the mock function so it can be used in the vi.mock factory
@@ -83,10 +83,10 @@ vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => {
   return { SSEClientTransport: MockSSEClientTransport };
 });
 
-// Mock Google genai mcpToTool  
-vi.mock('../__stubs__/google-genai.js', async () => {
+// Mock mcpToTool
+vi.mock('../__stubs__/types.js', async () => {
   const actualGenai =
-    await vi.importActual<typeof import('../__stubs__/google-genai.js')>('../__stubs__/google-genai.js');
+    await vi.importActual<typeof import('../__stubs__/types.js')>('../__stubs__/types.js');
   return {
     ...actualGenai,
     mcpToTool: vi.fn().mockImplementation(() => ({
@@ -132,7 +132,7 @@ const baseConfigParams: ConfigParameters = {
   targetDir: '/test/dir',
   debugMode: false,
   userMemory: '',
-  geminiMdFileCount: 0,
+  grokMdFileCount: 0,
   approvalMode: ApprovalMode.DEFAULT,
   sessionId: 'test-session-id',
 };

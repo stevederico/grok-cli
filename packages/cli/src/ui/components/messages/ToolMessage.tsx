@@ -118,28 +118,28 @@ const ToolStatusIndicator: React.FC<ToolStatusIndicatorProps> = ({
 }) => (
   <Box minWidth={STATUS_INDICATOR_WIDTH}>
     {status === ToolCallStatus.Pending && (
-      <Text color={Colors.AccentGreen}>o</Text>
+      <Text color={Colors.Gray}>○</Text>
     )}
     {status === ToolCallStatus.Executing && (
       <LLMRespondingSpinner
         spinnerType="toggle"
-        nonRespondingDisplay={'⊷'}
+        nonRespondingDisplay={'◉'}
       />
     )}
     {status === ToolCallStatus.Success && (
-      <Text color={Colors.AccentGreen}>✔</Text>
+      <Text color={Colors.AccentGreen}>✓</Text>
     )}
     {status === ToolCallStatus.Confirming && (
       <Text color={Colors.AccentYellow}>?</Text>
     )}
     {status === ToolCallStatus.Canceled && (
       <Text color={Colors.AccentYellow} bold>
-        -
+        ○
       </Text>
     )}
     {status === ToolCallStatus.Error && (
       <Text color={Colors.AccentRed} bold>
-        x
+        ✗
       </Text>
     )}
   </Box>

@@ -44,7 +44,7 @@ export async function runNonInteractive(
     if (providerName === 'xai') {
       providerConfig.apiKey = process.env.XAI_API_KEY || '';
     } else if (providerName === 'ollama') {
-      providerConfig.endpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';
+      providerConfig.endpoint = process.env.GROKCLI_OLLAMA_ENDPOINT || process.env.OLLAMA_HOST || 'http://localhost:11434';
       providerConfig.model = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
     }
     

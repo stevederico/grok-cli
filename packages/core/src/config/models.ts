@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const DEFAULT_AI_MODEL = 'grok-4-0709';
-export const DEFAULT_AI_FLASH_MODEL = 'grok-4-0709-preview';
+export const DEFAULT_AI_MODEL = 'grok-code-fast-1';
+export const DEFAULT_AI_FLASH_MODEL = 'grok-code-fast-1';
 export const DEFAULT_AI_EMBEDDING_MODEL = 'text-embedding-3-small';
 
 // Legacy exports for backward compatibility

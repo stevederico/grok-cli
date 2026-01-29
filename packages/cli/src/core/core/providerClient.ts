@@ -10,22 +10,16 @@ import { AuthType } from './types.js';
 
 /**
  * Provider-agnostic client that works with all providers
- * Replaces the Google-specific GeminiClient for interactive mode
+ * Currently supports: XAI (Grok) and Ollama
  */
 export class ProviderClient {
   constructor(private config: Config) {}
 
   async initialize(authMethod?: AuthType): Promise<void> {
-    // For non-Google providers, initialization is handled by the provider system
+    // For XAI and Ollama providers, initialization is handled by the provider system
+    // They use API keys or local services - no special setup needed
     const provider = this.config.getProvider();
-    
-    if (provider === 'google') {
-      // For Google, we still need the traditional auth flow
-      // This will be handled separately if needed
-      console.debug('Google provider initialization would go here');
-    } else {
-      // For other providers (ollama, grok, etc.), no special initialization needed
-      // They use API keys or local services
+    if (process.env.DEBUG === '1' || process.env.DEBUG === 'true') {
       console.debug(`Provider ${provider} initialized successfully`);
     }
   }
@@ -77,19 +71,16 @@ export class ProviderClient {
 
     switch (provider) {
       case 'ollama':
-        providerConfig.endpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';
+        providerConfig.endpoint = process.env.GROKCLI_OLLAMA_ENDPOINT || process.env.OLLAMA_HOST || 'http://localhost:11434';
         providerConfig.model = this.config.getModel();
         break;
-      
+
+      case 'xai':
       case 'grok':
         providerConfig.apiKey = process.env.XAI_API_KEY || '';
         providerConfig.model = process.env.XAI_MODEL;
         break;
-      
-      case 'google':
-        // Google config would be handled by the existing GeminiClient
-        break;
-      
+
       default:
         console.warn(`Unknown provider: ${provider}`);
     }
@@ -102,23 +93,21 @@ export class ProviderClient {
    */
   async isConfigured(): Promise<boolean> {
     const provider = this.config.getProvider();
-    
+
     try {
       switch (provider) {
         case 'ollama':
-          const endpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';
+          const endpoint = process.env.GROKCLI_OLLAMA_ENDPOINT || process.env.OLLAMA_HOST || 'http://localhost:11434';
           const response = await fetch(`${endpoint}/api/version`);
           return response.ok;
-        
+
+        case 'xai':
         case 'grok':
           const apiKey = process.env.XAI_API_KEY;
           return !!apiKey;
-        
-        case 'google':
-          // Would check Google auth
-          return true;
-        
+
         default:
+          console.warn(`Unknown provider: ${provider}`);
           return false;
       }
     } catch (error) {
@@ -132,18 +121,19 @@ export class ProviderClient {
    */
   getProviderInfo(): { name: string; configured: boolean; requirements: string[] } {
     const provider = this.config.getProvider();
-    
+
     switch (provider) {
       case 'ollama':
         return {
           name: 'Ollama',
-          configured: !!(process.env.OLLAMA_HOST || 'http://localhost:11434'),
+          configured: !!(process.env.GROKCLI_OLLAMA_ENDPOINT || process.env.OLLAMA_HOST),
           requirements: [
-            'Ollama service running on http://localhost:11434',
+            'Ollama service running (set GROKCLI_OLLAMA_ENDPOINT or use default http://localhost:11434)',
             'Model installed (e.g., ollama pull llama3.2:latest)',
           ]
         };
-      
+
+      case 'xai':
       case 'grok':
         return {
           name: 'Grok (xAI)',
@@ -152,12 +142,12 @@ export class ProviderClient {
             'XAI_API_KEY environment variable',
           ]
         };
-      
+
       default:
         return {
           name: provider,
           configured: false,
-          requirements: ['Unknown provider requirements'],
+          requirements: [`Unknown provider: ${provider}. Supported providers: xai, ollama`],
         };
     }
   }

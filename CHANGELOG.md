@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.2]
+
+  Update ASCII art
+  Default grok-code-fast-1
+  Fix tsconfig exclude
+
 ## [0.3.0] - 2025-07-15
 ### Added
 - Complete Terms of Service and Privacy Notice documentation

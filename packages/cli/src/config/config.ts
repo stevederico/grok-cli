@@ -60,7 +60,7 @@ async function parseArguments(): Promise<CliArgs> {
   if (provider === 'ollama') {
     defaultModel = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
   } else if (provider === 'xai') {
-    defaultModel = process.env.XAI_MODEL || 'grok-4-0709';
+    defaultModel = process.env.XAI_MODEL || 'grok-code-fast-1';
   }
 
   const argv = await yargs(hideBin(process.argv))
@@ -244,9 +244,8 @@ export async function loadCliConfig(
     extensionContextFilePaths,
   });
   
-  // Initialize the tool registry for non-Google providers
-  // For Google providers, this would normally be done after auth selection
-  // But since we're using alternative providers, we can initialize immediately
+  // Initialize the tool registry
+  // For XAI and Ollama providers, we can initialize immediately
   await configInstance.refreshAuth('none' as any);
   
   return configInstance;

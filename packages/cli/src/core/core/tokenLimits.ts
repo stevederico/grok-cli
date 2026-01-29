@@ -13,6 +13,7 @@ export function tokenLimit(model: Model): TokenCount {
   // Add other models as they become relevant or if specified by config
   // XAI/Grok models
   switch (model) {
+    case 'grok-code-fast-1':
     case 'grok-4-0709':
     case 'grok-4':
     case 'grok-3-mini':

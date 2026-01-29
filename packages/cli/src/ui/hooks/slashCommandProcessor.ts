@@ -697,7 +697,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
                   let defaultModel: string;
                   
                   if (providerName === 'xai') {
-                    defaultModel = process.env.XAI_MODEL || 'grok-4-0709';
+                    defaultModel = process.env.XAI_MODEL || 'grok-code-fast-1';
                   } else if (providerName === 'ollama') {
                     defaultModel = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
                   } else {

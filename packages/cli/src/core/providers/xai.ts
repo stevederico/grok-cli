@@ -1,5 +1,10 @@
 import { Provider, ProviderConfig, QueryOptions, ToolCallResponse, ProviderToolCall } from './index.js';
 import { tokenLimit } from '../core/tokenLimits.js';
+import { retryWithBackoff } from '../utils/retry.js';
+import { getSystemPrompt } from './systemPrompts.js';
+
+// Check if debug logging is enabled
+const isDebugEnabled = () => process.env.DEBUG === '1' || process.env.DEBUG === 'true';
 
 // Simple token estimation (approximate)
 function estimateTokens(text: string): number {
@@ -46,7 +51,7 @@ function truncateToTokenLimit(messages: any[], model: string, maxTokens: number)
     truncatedMessages.unshift(msg);
   }
   
-  if (truncatedMessages.length < messages.length) {
+  if (truncatedMessages.length < messages.length && isDebugEnabled()) {
     console.log(`🔧 XAI - Truncated ${messages.length - truncatedMessages.length} messages due to token limit (${totalTokens}/${availableTokens} tokens)`);
   }
   
@@ -61,7 +66,7 @@ export class XAIProvider extends Provider {
   constructor(config: ProviderConfig = {}) {
     super('xai', config);
     this.apiKey = config.apiKey || process.env.XAI_API_KEY;
-    this.model = config.model || process.env.XAI_MODEL || 'grok-4-0709';
+    this.model = config.model || process.env.XAI_MODEL || 'grok-code-fast-1';
     this.endpoint = config.endpoint || 'https://api.x.ai/v1';
   }
 
@@ -71,19 +76,32 @@ export class XAIProvider extends Provider {
 
   async getModels(): Promise<string[]> {
     if (!this.isConfigured()) {
-      throw new Error('XAI provider not configured. Set XAI_API_KEY');
+      throw new Error('XAI: Provider not configured. Set XAI_API_KEY environment variable');
     }
 
     try {
-      const response = await fetch(`${this.endpoint}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        }
-      });
-      const data = await response.json();
-      const models = data.data?.map((m: any) => m.id) || [];
-      return models.sort((a: string, b: string) => b.localeCompare(a, undefined, { numeric: true }));
+      return await retryWithBackoff(
+        async () => {
+          const response = await fetch(`${this.endpoint}/models`, {
+            headers: {
+              'Authorization': `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          });
+
+          if (!response.ok) {
+            const error = new Error(`Failed to fetch models: ${response.status}`) as any;
+            error.status = response.status;
+            throw error;
+          }
+
+          const data = await response.json();
+          const models = data.data?.map((m: any) => m.id) || [];
+          return models.sort((a: string, b: string) => b.localeCompare(a, undefined, { numeric: true }));
+        },
+        { maxAttempts: 2, initialDelayMs: 500, maxDelayMs: 2000 }
+      );
     } catch (error) {
       throw new Error(`Failed to fetch XAI models: ${(error as Error).message}`);
     }
@@ -96,7 +114,7 @@ export class XAIProvider extends Provider {
 
   async queryWithTools(prompt: string, tools: any[], options: QueryOptions = {}): Promise<ToolCallResponse> {
     if (!this.isConfigured()) {
-      throw new Error('XAI provider not configured. Set XAI_API_KEY');
+      throw new Error('XAI: Provider not configured. Set XAI_API_KEY environment variable');
     }
 
     const model = options.model || this.model;
@@ -107,7 +125,7 @@ export class XAIProvider extends Provider {
       
       // Handle tool results continuation
       if (options.tool_results && options.tool_results.length > 0) {
-        console.log(`🔧 XAI - Processing tool results continuation with ${options.tool_results.length} results`);
+        if (isDebugEnabled()) console.log(`🔧 XAI - Processing tool results continuation with ${options.tool_results.length} results`);
         // This is a continuation after tool execution
         // We need to reconstruct the conversation:
         // 1. Original user message (use empty string if not provided)
@@ -159,35 +177,17 @@ export class XAIProvider extends Provider {
         }));
         messages.push(...toolMessages);
         
-        console.log(`🔧 XAI - Tool continuation messages structure:`, JSON.stringify(messages.map(m => ({
+        if (isDebugEnabled()) console.log(`🔧 XAI - Tool continuation messages structure:`, JSON.stringify(messages.map(m => ({
           role: m.role,
           contentLength: m.content ? m.content.length : 0,
           tool_call_id: m.tool_call_id,
           tool_calls: m.tool_calls ? m.tool_calls.length : undefined
         })), null, 2));
       } else {
-        // Normal query
-        // Add system context first
+        // Normal query - add system context first
         messages.push({
           role: 'system',
-          content: `You are an AI assistant helping with software development tasks.
-
-Current working directory: ${process.cwd()}
-
-When using tools:
-- The current working directory is "${process.cwd()}"
-- If a tool has an optional 'path' parameter and the user asks about files in "this directory" or "current directory", you should use the tools to discover files rather than asking for absolute paths
-- For the 'list_directory' tool, if the user asks to list files in the current directory, use the path "${process.cwd()}"
-- For the 'glob' tool, if no path is specified, it will search from the current directory
-- You have access to file discovery tools - use them instead of asking users for paths
-
-Available tools help you:
-- list_directory: List files in a directory
-- glob: Find files matching patterns
-- search_file_content: Search for content in files
-- read_file: Read file contents
-- replace_file: Edit files
-- write_file: Create new files`
+          content: getSystemPrompt()
         });
         messages.push({ role: 'user', content: prompt });
       }
@@ -217,51 +217,75 @@ Available tools help you:
       
       const fullEndpoint = `${this.endpoint}/chat/completions`;
       
-      console.log(`🚀 XAI - Making request to: ${fullEndpoint}`);
-      console.log(`📦 XAI - Using model: ${model}`);
-      console.log(`🔑 XAI - API key configured: ${this.apiKey ? 'YES' : 'NO'}`);
-      console.log(`🌡️  XAI - Temperature: ${temperature}`);
-      if (tools && tools.length > 0) {
-        console.log(`🔧 XAI - Tools available: ${tools.length}`);
+      if (isDebugEnabled()) {
+        console.log(`🚀 XAI - Making request to: ${fullEndpoint}`);
+        console.log(`📦 XAI - Using model: ${model}`);
+        console.log(`🔑 XAI - API key configured: ${this.apiKey ? 'YES' : 'NO'}`);
+        console.log(`🌡️  XAI - Temperature: ${temperature}`);
+        if (tools && tools.length > 0) {
+          console.log(`🔧 XAI - Tools available: ${tools.length}`);
+        }
+        if (options.tool_results) {
+          console.log(`🔧 XAI - Sending ${options.tool_results.length} tool results back`);
+          console.log(`📝 XAI - Messages in conversation: ${requestBody.messages.length}`);
+          requestBody.messages.forEach((msg: any, i: number) => {
+            console.log(`  Message[${i}] role: ${msg.role}, has content: ${!!msg.content}, has tool_calls: ${!!msg.tool_calls}`);
+          });
+        }
+        console.debug(`[DEBUG] XAI - Full request body:`, JSON.stringify(requestBody, null, 2));
       }
-      if (options.tool_results) {
-        console.log(`🔧 XAI - Sending ${options.tool_results.length} tool results back`);
-        console.log(`📝 XAI - Messages in conversation: ${requestBody.messages.length}`);
-        requestBody.messages.forEach((msg: any, i: number) => {
-          console.log(`  Message[${i}] role: ${msg.role}, has content: ${!!msg.content}, has tool_calls: ${!!msg.tool_calls}`);
-        });
-      }
-      console.debug(`[DEBUG] XAI - Full request body:`, JSON.stringify(requestBody, null, 2));
       
-      const response = await fetch(fullEndpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
+      // Wrap fetch in retry logic for resilience
+      const response = await retryWithBackoff(
+        async () => {
+          const res = await fetch(fullEndpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            signal: AbortSignal.timeout(60000), // 60 second timeout
+            body: JSON.stringify(requestBody)
+          });
+
+          // Convert fetch errors to retryable errors
+          if (!res.ok) {
+            const error = new Error(`XAI API error: ${res.status} ${res.statusText}`) as any;
+            error.status = res.status;
+            error.response = {
+              status: res.status,
+              headers: Object.fromEntries(res.headers.entries())
+            };
+            throw error;
+          }
+
+          return res;
         },
-        body: JSON.stringify(requestBody)
-      });
+        {
+          maxAttempts: 3,
+          initialDelayMs: 1000,
+          maxDelayMs: 10000,
+        }
+      );
 
-      console.log(`📡 XAI - Response status: ${response.status} ${response.statusText}`);
-      console.log(`📍 XAI - Response URL: ${response.url}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ XAI - Error response body:`, errorText);
-        console.error(`❌ XAI - Response headers:`, Object.fromEntries(response.headers.entries()));
-        throw new Error(`XAI API error: ${response.status} ${response.statusText} - ${errorText}`);
+      if (isDebugEnabled()) {
+        console.log(`📡 XAI - Response status: ${response.status} ${response.statusText}`);
+        console.log(`📍 XAI - Response URL: ${response.url}`);
       }
 
+      // Response is guaranteed to be ok due to retry logic
       const data = await response.json();
-      console.log(`✅ XAI - Success! Response received`);
-      console.debug(`[DEBUG] XAI - Full response:`, JSON.stringify(data, null, 2));
+      if (isDebugEnabled()) {
+        console.log(`✅ XAI - Success! Response received`);
+        console.debug(`[DEBUG] XAI - Full response:`, JSON.stringify(data, null, 2));
+      }
       
       if (data.choices && data.choices[0] && data.choices[0].message) {
         const message = data.choices[0].message;
         
         // Check for tool calls
         if (message.tool_calls && message.tool_calls.length > 0) {
-          console.log(`🔧 XAI - Tool calls detected: ${message.tool_calls.length}`);
+          if (isDebugEnabled()) console.log(`🔧 XAI - Tool calls detected: ${message.tool_calls.length}`);
           const toolCalls: ProviderToolCall[] = message.tool_calls.map((call: any) => ({
             id: call.id,
             function: {

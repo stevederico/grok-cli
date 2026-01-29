@@ -267,23 +267,29 @@ async function validateNonInterActiveAuth(
 ) {
   // Check provider-specific API keys
   const provider = nonInteractiveConfig.getProvider();
-  console.debug(`DEBUG: Provider detected: ${provider}`);
+  if (process.env.DEBUG === '1' || process.env.DEBUG === 'true') {
+    console.debug(`DEBUG: Provider detected: ${provider}`);
+  }
   let hasApiKey = false;
   
-  if (provider === 'grok') {
+  if (provider === 'grok' || provider === 'xai') {
     hasApiKey = !!(process.env.XAI_API_KEY);
-    console.debug(`DEBUG: Grok provider, hasApiKey: ${hasApiKey}`);
+    if (process.env.DEBUG === '1' || process.env.DEBUG === 'true') {
+      console.debug(`DEBUG: ${provider} provider, hasApiKey: ${hasApiKey}`);
+    }
   } else if (provider === 'ollama') {
     // Ollama runs locally, no API key needed
     hasApiKey = true;
-    console.debug(`DEBUG: Ollama provider, hasApiKey: ${hasApiKey}`);
+    if (process.env.DEBUG === '1' || process.env.DEBUG === 'true') {
+      console.debug(`DEBUG: Ollama provider, hasApiKey: ${hasApiKey}`);
+    }
   }
 
   // Validate API keys for supported providers
   if (!hasApiKey && provider !== 'ollama') {
+    const providerName = provider === 'grok' ? 'XAI' : provider.toUpperCase();
     console.error(
-      `Please set the appropriate API key for provider "${provider}". ` +
-      `For grok: XAI_API_KEY`,
+      `${providerName}: Provider not configured. Set XAI_API_KEY environment variable`,
     );
     process.exit(1);
   }

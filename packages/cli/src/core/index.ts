@@ -7,8 +7,9 @@
 // Export provider system
 export * from './providers/index.js';
 export * from './providers/registry.js';
-export * from './providers/grok.js';
+export * from './providers/xai.js';
 export * from './providers/ollama.js';
+export * from './providers/systemPrompts.js';
 
 // Export high-level query API
 export * from './query.js';

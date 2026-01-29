@@ -1,5 +1,6 @@
 import { Provider, ProviderConfig, QueryOptions } from './index.js';
 import { env } from 'node:process';
+import { retryWithBackoff } from '../utils/retry.js';
 
 export class OllamaProvider extends Provider {
   private model: string;
@@ -25,7 +26,7 @@ export class OllamaProvider extends Provider {
       return data.models?.map((m: any) => m.name) || [];
     } catch (error) {
       if (error instanceof Error && error.name === 'TimeoutError') {
-        throw new Error('Timeout connecting to Ollama service - check if Ollama is running');
+        throw new Error('Ollama connection timeout. Check if Ollama service is running at ' + this.endpoint);
       }
       throw new Error(`Failed to fetch Ollama models: ${(error as Error).message}`);
     }
@@ -41,7 +42,7 @@ export class OllamaProvider extends Provider {
         // Try to find a suitable fallback model
         const availableModels = await this.getModels();
         if (availableModels.length === 0) {
-          throw new Error(`No models available in Ollama. Please install a model first: ollama pull llama3.2`);
+          throw new Error(`Ollama: No models available. Install a model first: ollama pull llama3.2`);
         }
         
         // Use the first available model as fallback
@@ -50,29 +51,38 @@ export class OllamaProvider extends Provider {
         return this.query(prompt, { ...options, model: fallbackModel });
       }
 
-      const response = await fetch(`${this.endpoint}/api/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: AbortSignal.timeout(30000), // 30 second timeout for generation
-        body: JSON.stringify({
-          model,
-          prompt,
-          stream: false,
-          options: {
-            temperature,
-            num_predict: options.maxTokens || 2048,
-          }
-        })
-      });
+      const response = await retryWithBackoff(
+        async () => {
+          const res = await fetch(`${this.endpoint}/api/generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            signal: AbortSignal.timeout(30000), // 30 second timeout for generation
+            body: JSON.stringify({
+              model,
+              prompt,
+              stream: false,
+              options: {
+                temperature,
+                num_predict: options.maxTokens || 2048,
+              }
+            })
+          });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error(`Model '${model}' not found. Available models: ${(await this.getModels()).join(', ')}`);
-        }
-        throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
-      }
+          if (!res.ok) {
+            if (res.status === 404) {
+              throw new Error(`Ollama: Model '${model}' not found. Available models: ${(await this.getModels()).join(', ')}`);
+            }
+            const error = new Error(`Ollama API error: ${res.status} ${res.statusText}`) as any;
+            error.status = res.status;
+            throw error;
+          }
+
+          return res;
+        },
+        { maxAttempts: 3, initialDelayMs: 1000, maxDelayMs: 10000 }
+      );
 
       const data = await response.json();
       
@@ -113,17 +123,26 @@ export class OllamaProvider extends Provider {
           const assistantMessage = {
             role: 'assistant',
             content: prevResponse.content || null,
-            tool_calls: prevResponse.tool_calls.map((tc: any) => ({
-              id: tc.id,
-              type: tc.type,
-              function: {
-                name: tc.function.name,
-                // Parse arguments back to object for Ollama's continuation format
-                arguments: typeof tc.function.arguments === 'string' 
-                  ? JSON.parse(tc.function.arguments)
-                  : tc.function.arguments
+            tool_calls: prevResponse.tool_calls.map((tc: any) => {
+              let parsedArguments = tc.function.arguments;
+              // Parse arguments back to object for Ollama's continuation format
+              if (typeof tc.function.arguments === 'string') {
+                try {
+                  parsedArguments = JSON.parse(tc.function.arguments);
+                } catch (error) {
+                  console.error(`Failed to parse tool arguments: ${tc.function.arguments}`, error);
+                  parsedArguments = {}; // Fallback to empty object
+                }
               }
-            }))
+              return {
+                id: tc.id,
+                type: tc.type,
+                function: {
+                  name: tc.function.name,
+                  arguments: parsedArguments
+                }
+              };
+            })
           };
           messages.push(assistantMessage);
         }
@@ -157,36 +176,46 @@ export class OllamaProvider extends Provider {
         }));
       }
 
-      const response = await fetch(`${this.endpoint}/api/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await retryWithBackoff(
+        async () => {
+          const res = await fetch(`${this.endpoint}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            signal: AbortSignal.timeout(60000), // 60 second timeout - increased for tool processing
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!res.ok) {
+            if (res.status === 404) {
+              // Fall back to basic query if chat endpoint or model doesn't support tools
+              console.warn(`Ollama chat endpoint not available or model doesn't support tools. Falling back to basic query.`);
+              const basicResponse = await this.query(prompt, options);
+              // Wrap in a fake response object to exit retry
+              throw { fallbackResponse: { content: basicResponse } };
+            }
+
+            const error = new Error(`Ollama API error: ${res.status} ${res.statusText}`) as any;
+            error.status = res.status;
+            throw error;
+          }
+
+          return res;
         },
-        signal: AbortSignal.timeout(60000), // 60 second timeout - increased for tool processing
-        body: JSON.stringify(requestBody)
+        { maxAttempts: 3, initialDelayMs: 1000, maxDelayMs: 10000 }
+      ).catch((error) => {
+        // Handle fallback response from 404
+        if (error.fallbackResponse) {
+          return null; // Signal fallback was used
+        }
+        throw error;
       });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Fall back to basic query if chat endpoint or model doesn't support tools
-          console.warn(`Ollama chat endpoint not available or model doesn't support tools. Falling back to basic query.`);
-          const basicResponse = await this.query(prompt, options);
-          return { content: basicResponse };
-        }
-        
-        // Try to get the error details from the response
-        let errorMessage = `${response.status} ${response.statusText}`;
-        try {
-          const errorData = await response.json();
-          console.error(`🔍 Ollama - Error response:`, errorData);
-          if (errorData.error) {
-            errorMessage += `: ${errorData.error}`;
-          }
-        } catch {
-          // If we can't parse the error response, just use the status
-        }
-        
-        throw new Error(`Ollama API error: ${errorMessage}`);
+      // If fallback was used, response will be null
+      if (!response) {
+        const basicResponse = await this.query(prompt, options);
+        return { content: basicResponse };
       }
 
       const data = await response.json();

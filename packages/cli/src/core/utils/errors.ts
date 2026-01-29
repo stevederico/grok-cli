@@ -58,5 +58,5 @@ function parseResponseData(error: GaxiosError): ResponseData {
   if (typeof error.response?.data === 'string') {
     return JSON.parse(error.response?.data) as ResponseData;
   }
-  return typeof error.response?.data as ResponseData;
+  return error.response?.data as ResponseData;
 }

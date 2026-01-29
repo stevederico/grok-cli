@@ -411,7 +411,7 @@ export const useProviderStream = (
           providerConfig.apiKey = process.env.XAI_API_KEY || '';
           providerConfig.contextSize = parseInt(process.env.GROKCLI_CONTEXT_SIZE || '128000', 10);
         } else if (providerName === 'ollama') {
-          providerConfig.endpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';
+          providerConfig.endpoint = process.env.GROKCLI_OLLAMA_ENDPOINT || process.env.OLLAMA_HOST || 'http://localhost:11434';
           providerConfig.model = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
         }
 

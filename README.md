@@ -6,15 +6,15 @@ Grok CLI is an open-source interactive CLI tool that provides a flexible and pow
 
 **Supported Providers:**
 - **XAI (Grok)** - Cloud-based Grok models via xAI API
-- **OpenAI** - GPT models via OpenAI API
+- **Ollama** - Local LLM inference with any Ollama model
+- **Custom** - Any OpenAI-compatible endpoint
 - **Anthropic** - Claude models via Anthropic API
 - **Google Gemini** - Gemini models via Google AI API
 - **OpenRouter** - Multi-model routing service
 - **Groq** - Fast open-source model inference
 - **Azure OpenAI** - OpenAI models via Azure
 - **GitHub Models** - Models via GitHub inference API
-- **Ollama** - Local LLM inference with any Ollama model
-- **Custom** - Any OpenAI-compatible endpoint
+
 
 ## Quick Start
 

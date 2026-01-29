@@ -51,6 +51,9 @@ import {
 } from './useReactToolScheduler.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
 
+const MAX_TOOL_CALL_ROUNDS = 15;
+const MAX_DUPLICATE_TOOL_CALLS = 3;
+
 export function mergePartListUnions(list: PartListUnion[]): PartListUnion {
   const resultParts: PartListUnion = [];
   for (const item of list) {
@@ -104,6 +107,8 @@ export const useProviderStream = (
   const logger = useLogger();
   const { startNewTurn, addUsage } = useSessionStats();
   const lastAssistantResponseRef = useRef<ToolCallResponse | null>(null);
+  const toolCallRoundRef = useRef(0);
+  const recentToolCallSignaturesRef = useRef<string[]>([]);
   const gitService = useMemo(() => {
     if (!config.getProjectRoot()) {
       return;
@@ -241,6 +246,12 @@ export const useProviderStream = (
             scheduleToolCalls([toolCallRequest], abortSignal);
           }
           return { queryToSend: null, shouldProceed: false }; // Handled by scheduling the tool
+        } else if (
+          typeof slashCommandResult === 'object' &&
+          slashCommandResult.message
+        ) {
+          // Slash command wants to inject a message as an AI prompt (e.g., custom commands)
+          return { queryToSend: slashCommandResult.message, shouldProceed: true };
         }
 
         if (shellModeActive && handleShellCommand(trimmedQuery, abortSignal)) {
@@ -312,6 +323,25 @@ export const useProviderStream = (
           console.debug(`[DEBUG] submitQuery - Returning early due to streaming state`);
         }
         return;
+      }
+
+      // Track tool call rounds for loop prevention
+      if (!options?.isContinuation) {
+        toolCallRoundRef.current = 0;
+        recentToolCallSignaturesRef.current = [];
+      } else {
+        toolCallRoundRef.current += 1;
+        if (toolCallRoundRef.current >= MAX_TOOL_CALL_ROUNDS) {
+          addItem(
+            {
+              type: MessageType.ERROR,
+              text: `Tool call loop detected: exceeded ${MAX_TOOL_CALL_ROUNDS} consecutive tool call rounds. Stopping to prevent infinite loop. Please refine your request.`,
+            },
+            Date.now(),
+          );
+          setIsResponding(false);
+          return;
+        }
       }
 
       const userMessageTimestamp = Date.now();
@@ -547,6 +577,32 @@ export const useProviderStream = (
             };
           });
           
+          // Duplicate tool call detection
+          const roundSignature = toolCallRequests
+            .map(t => `${t.toolName}:${JSON.stringify(t.parameters)}`)
+            .sort()
+            .join('|');
+          recentToolCallSignaturesRef.current.push(roundSignature);
+          // Keep only the last MAX_DUPLICATE_TOOL_CALLS entries
+          if (recentToolCallSignaturesRef.current.length > MAX_DUPLICATE_TOOL_CALLS) {
+            recentToolCallSignaturesRef.current = recentToolCallSignaturesRef.current.slice(-MAX_DUPLICATE_TOOL_CALLS);
+          }
+          // Check if the last N signatures are all identical
+          if (
+            recentToolCallSignaturesRef.current.length >= MAX_DUPLICATE_TOOL_CALLS &&
+            recentToolCallSignaturesRef.current.every(sig => sig === roundSignature)
+          ) {
+            addItem(
+              {
+                type: MessageType.ERROR,
+                text: `Duplicate tool call loop detected: the same tool call pattern was repeated ${MAX_DUPLICATE_TOOL_CALLS} times. Stopping to prevent infinite loop.`,
+              },
+              Date.now(),
+            );
+            setIsResponding(false);
+            return;
+          }
+
           console.debug(`[DEBUG] Interactive UI - Scheduling tool calls:`, toolCallRequests.map(t => t.toolName));
           setAgentPhase('executing_tools');
           scheduleToolCalls(toolCallRequests, abortControllerRef.current?.signal);

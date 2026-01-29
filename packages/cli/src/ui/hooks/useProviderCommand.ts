@@ -14,6 +14,16 @@ interface UseProviderCommandReturn {
   handleProviderSelect: (providerName: string | undefined) => void;
 }
 
+const DEFAULT_MODELS: Record<string, () => string> = {
+  xai: () => process.env.XAI_MODEL || 'grok-code-fast-1',
+  openai: () => process.env.OPENAI_MODEL || 'gpt-4o',
+  anthropic: () => process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+  google: () => process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  openrouter: () => process.env.OPENROUTER_MODEL || 'anthropic/claude-sonnet-4',
+  groq: () => process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+  ollama: () => process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest',
+};
+
 export const useProviderCommand = (
   config: Config,
   addItem: (item: Omit<HistoryItem, 'id'>, timestamp: number) => void,
@@ -27,33 +37,32 @@ export const useProviderCommand = (
   const handleProviderSelect = useCallback(
     async (providerName: string | undefined) => {
       setIsProviderDialogOpen(false);
-      
+
       if (providerName) {
         try {
           // Switch the provider
           config.setProvider(providerName);
-          
-          // Get the provider's default model and switch to it
-          const provider = getProvider(providerName);
+
+          // Get the provider's default model
+          const getDefault = DEFAULT_MODELS[providerName];
           let defaultModel: string;
-          
-          if (providerName === 'xai') {
-            defaultModel = process.env.XAI_MODEL || 'grok-code-fast-1';
-          } else if (providerName === 'ollama') {
-            defaultModel = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
+
+          if (getDefault) {
+            defaultModel = getDefault();
           } else {
-            // For other providers, try to get the first available model
+            // For unknown providers, try to get the first available model
             try {
+              const provider = getProvider(providerName);
               const models = await provider.getModels();
               defaultModel = models.length > 0 ? models[0] : 'unknown';
             } catch {
               defaultModel = 'unknown';
             }
           }
-          
+
           // Update the model
           config.setModel(defaultModel);
-          
+
           addItem(
             {
               type: MessageType.INFO,

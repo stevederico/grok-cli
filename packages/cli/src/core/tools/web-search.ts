@@ -151,7 +151,13 @@ export class WebSearchTool extends BaseTool<WebSearchToolParams, ToolResult> {
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(params.query)}`;
 
     try {
-      const response = await fetchWithTimeout(searchUrl, SEARCH_TIMEOUT_MS);
+      const response = await fetchWithTimeout(searchUrl, SEARCH_TIMEOUT_MS, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+      });
       if (!response.ok) {
         return {
           llmContent: `Error: Search returned status ${response.status}`,

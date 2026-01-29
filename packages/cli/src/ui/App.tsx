@@ -45,7 +45,7 @@ import { Colors } from './colors.js';
 import { Help } from './components/Help.js';
 import { loadHierarchicalMemory } from '../config/config.js';
 import { LoadedSettings } from '../config/settings.js';
-import { Tips } from './components/Tips.js';
+
 import { useConsolePatcher } from './components/ConsolePatcher.js';
 import { DetailedMessagesDisplay } from './components/DetailedMessagesDisplay.js';
 import { HistoryItemDisplay } from './components/HistoryItemDisplay.js';
@@ -319,11 +319,15 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
   }, []);
 
   const widthFraction = 0.9;
+  // Border (2) + paddingX (2) + prompt icon (2) = 6 chars overhead
   const inputWidth = Math.max(
-    20,
-    Math.floor(terminalWidth * widthFraction) - 3,
+    10,
+    Math.floor(terminalWidth * widthFraction) - 6,
   );
-  const suggestionsWidth = Math.max(60, Math.floor(terminalWidth * 0.8));
+  const suggestionsWidth = Math.min(
+    Math.floor(terminalWidth * widthFraction) - 2,
+    Math.max(30, Math.floor(terminalWidth * 0.8)),
+  );
 
   const buffer = useTextBuffer({
     initialText: '',
@@ -668,8 +672,11 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
           key={staticKey}
           items={[
             <Box flexDirection="column" key="header">
-              <Header terminalWidth={terminalWidth} />
-              <Tips config={config} />
+              <Header
+                terminalWidth={terminalWidth}
+                modelName={currentModel}
+                providerName={config?.getProvider()}
+              />
               {updateMessage && <UpdateNotification message={updateMessage} />}
             </Box>,
             ...history.map((h) => (
@@ -813,6 +820,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 display="flex"
                 justifyContent="space-between"
                 width="100%"
+                flexWrap="wrap"
               >
                 <Box>
                   {process.env.GROK_SYSTEM_MD && (
@@ -837,13 +845,13 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                   )}
                 </Box>
                 <Box>
-                  {showAutoAcceptIndicator !== ApprovalMode.DEFAULT &&
-                    !shellModeActive && (
-                      <AutoAcceptIndicator
-                        approvalMode={showAutoAcceptIndicator}
-                      />
-                    )}
-                  {shellModeActive && <ShellModeIndicator />}
+                  {shellModeActive ? (
+                    <ShellModeIndicator />
+                  ) : (
+                    <AutoAcceptIndicator
+                      approvalMode={showAutoAcceptIndicator}
+                    />
+                  )}
                 </Box>
               </Box>
 
@@ -941,6 +949,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
               sessionStats.cumulative.candidatesTokenCount,
               currentModel,
             )}
+            approvalMode={showAutoAcceptIndicator}
           />
         </Box>
       </Box>

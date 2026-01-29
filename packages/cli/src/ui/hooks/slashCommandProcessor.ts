@@ -8,6 +8,7 @@ import { useCallback, useMemo } from 'react';
 import { type PartListUnion } from '../../core/__stubs__/types.js';
 import open from 'open';
 import process from 'node:process';
+import os from 'node:os';
 import { UseHistoryManagerReturn } from './useHistoryManager.js';
 import {
   Config,
@@ -20,6 +21,7 @@ import {
   getAvailableProviders,
   validateProvider,
   getProvider,
+  GROKCLI_CONFIG_DIR,
 } from '../../core/index.js';
 import { useSessionStats, calculateCost, MODEL_PRICING } from '../contexts/SessionContext.js';
 import {
@@ -28,7 +30,7 @@ import {
   HistoryItemWithoutId,
   HistoryItem,
 } from '../types.js';
-import { promises as fs } from 'fs';
+import { promises as fs, readdirSync, readFileSync } from 'fs';
 import path from 'path';
 import { createShowMemoryAction } from './useShowMemoryCommand.js';
 import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
@@ -118,6 +120,7 @@ export const useSlashCommandProcessor = (
           type: 'quit',
           stats: message.stats,
           duration: message.duration,
+          sessionCost: message.sessionCost,
         };
       } else {
         historyItemContent = {
@@ -1238,6 +1241,14 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
           const { sessionStartTime, cumulative } = session.stats;
           const wallDuration = now.getTime() - sessionStartTime.getTime();
 
+          const sessionCost = config
+            ? calculateCost(
+                cumulative.promptTokenCount,
+                cumulative.candidatesTokenCount,
+                config.getModel(),
+              )
+            : 0;
+
           setQuittingMessages([
             {
               type: 'user',
@@ -1248,6 +1259,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
               type: 'quit',
               stats: cumulative,
               duration: formatDuration(wallDuration),
+              sessionCost,
               id: now.getTime(),
             },
           ]);
@@ -1266,9 +1278,97 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
       },
       {
         name: 'auth',
-        description: 'open authentication method dialog',
-        action: () => {
-          openAuthDialog();
+        description: 'set API key or base URL: /auth <key> | /auth baseurl <url>',
+        action: async (_mainCommand: string, subCommand?: string, args?: string) => {
+          if (!subCommand) {
+            addMessage({
+              type: MessageType.INFO,
+              content: [
+                'Usage:',
+                '  /auth <api-key>           Set XAI_API_KEY',
+                '  /auth baseurl <url>       Set XAI_BASE_URL (custom endpoint)',
+                '  /auth show                Show current auth config',
+                '',
+                'Saves to ~/.grok-cli/.env and applies immediately.',
+              ].join('\n'),
+              timestamp: new Date(),
+            });
+            return;
+          }
+
+          // Helper to read/write the env file
+          const configDir = path.join(os.homedir(), GROKCLI_CONFIG_DIR);
+          const envFilePath = path.join(configDir, '.env');
+
+          const readEnvFile = async (): Promise<string> => {
+            try {
+              return await fs.readFile(envFilePath, 'utf-8');
+            } catch {
+              return '';
+            }
+          };
+
+          const setEnvVar = async (varName: string, value: string) => {
+            await fs.mkdir(configDir, { recursive: true });
+            let envContent = await readEnvFile();
+            const line = `${varName}=${value}`;
+            if (envContent.includes(`${varName}=`)) {
+              envContent = envContent.replace(new RegExp(`^${varName}=.*$`, 'm'), line);
+            } else {
+              envContent = envContent ? envContent.trimEnd() + '\n' + line + '\n' : line + '\n';
+            }
+            await fs.writeFile(envFilePath, envContent, 'utf-8');
+            process.env[varName] = value;
+          };
+
+          try {
+            if (subCommand === 'show') {
+              const maskedKey = process.env.XAI_API_KEY
+                ? process.env.XAI_API_KEY.slice(0, 7) + '...' + process.env.XAI_API_KEY.slice(-4)
+                : '(not set)';
+              const baseUrl = process.env.XAI_BASE_URL || 'https://api.x.ai/v1 (default)';
+              addMessage({
+                type: MessageType.INFO,
+                content: `XAI_API_KEY:  ${maskedKey}\nXAI_BASE_URL: ${baseUrl}`,
+                timestamp: new Date(),
+              });
+              return;
+            }
+
+            if (subCommand === 'baseurl') {
+              const url = args?.trim();
+              if (!url) {
+                addMessage({
+                  type: MessageType.ERROR,
+                  content: 'Usage: /auth baseurl <url>',
+                  timestamp: new Date(),
+                });
+                return;
+              }
+              await setEnvVar('XAI_BASE_URL', url);
+              addMessage({
+                type: MessageType.INFO,
+                content: `Base URL saved to ${envFilePath} and loaded into current session.`,
+                timestamp: new Date(),
+              });
+              return;
+            }
+
+            // Default: treat subCommand as the API key
+            const apiKey = args ? `${subCommand} ${args}`.trim() : subCommand;
+            await setEnvVar('XAI_API_KEY', apiKey);
+            addMessage({
+              type: MessageType.INFO,
+              content: `API key saved to ${envFilePath} and loaded into current session.`,
+              timestamp: new Date(),
+            });
+          } catch (e) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Failed to save: ${e instanceof Error ? e.message : String(e)}`,
+              timestamp: new Date(),
+            });
+          }
         },
       },
       {
@@ -1346,6 +1446,397 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
         },
       },
     ];
+
+    // --- /init command ---
+    commands.push({
+      name: 'init',
+      description: 'initialize .grok-cli/ project config with GROKCLI.md template and .grokcliignore',
+      action: async (_mainCommand, _subCommand, _args) => {
+        const projectRoot = config?.getProjectRoot();
+        if (!projectRoot) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: 'Could not determine project root.',
+            timestamp: new Date(),
+          });
+          return;
+        }
+        const grokDir = path.join(projectRoot, '.grok-cli');
+        const mdPath = path.join(grokDir, 'GROKCLI.md');
+        const ignorePath = path.join(projectRoot, '.grokcliignore');
+        const commandsDir = path.join(grokDir, 'commands');
+
+        try {
+          await fs.mkdir(grokDir, { recursive: true });
+          await fs.mkdir(commandsDir, { recursive: true });
+
+          // Create GROKCLI.md template if it doesn't exist
+          try {
+            await fs.access(mdPath);
+          } catch {
+            await fs.writeFile(mdPath, [
+              '# Project Instructions',
+              '',
+              '## Overview',
+              'Describe your project here.',
+              '',
+              '## Conventions',
+              '- Add coding conventions, style guides, etc.',
+              '',
+              '## Custom Commands',
+              'Place .md files in `.grok-cli/commands/` to create custom slash commands.',
+              '',
+            ].join('\n'), 'utf-8');
+          }
+
+          // Create .grokcliignore if it doesn't exist
+          try {
+            await fs.access(ignorePath);
+          } catch {
+            await fs.writeFile(ignorePath, [
+              'node_modules/',
+              'dist/',
+              'build/',
+              '.git/',
+              '*.log',
+              '.env',
+              '.env.*',
+              '',
+            ].join('\n'), 'utf-8');
+          }
+
+          addMessage({
+            type: MessageType.INFO,
+            content: `Initialized .grok-cli/ project config:\n  ${mdPath}\n  ${ignorePath}\n  ${commandsDir}/`,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Failed to initialize: ${error instanceof Error ? error.message : String(error)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
+    // --- /undo and /redo commands ---
+    const undoRedoStack: string[] = []; // redo stack (in-memory)
+
+    commands.push({
+      name: 'undo',
+      description: 'undo the last change by restoring to the previous checkpoint',
+      action: async (_mainCommand, _subCommand, _args) => {
+        if (!config?.getCheckpointingEnabled()) {
+          addMessage({
+            type: MessageType.INFO,
+            content: 'Checkpointing is not enabled. Enable it to use /undo.',
+            timestamp: new Date(),
+          });
+          return;
+        }
+        if (!gitService) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: 'Git service not available.',
+            timestamp: new Date(),
+          });
+          return;
+        }
+        try {
+          await gitService.initialize();
+          const repo = (gitService as any).shadowGitRepository;
+          if (!repo) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: 'Shadow git repository not available.',
+              timestamp: new Date(),
+            });
+            return;
+          }
+          // Get the current HEAD hash before undoing
+          const currentHash = (await repo.revparse(['HEAD'])).trim();
+          // Get the parent commit
+          const parentHash = (await repo.revparse(['HEAD~1'])).trim();
+
+          if (!parentHash) {
+            addMessage({
+              type: MessageType.INFO,
+              content: 'Nothing to undo — no previous checkpoint found.',
+              timestamp: new Date(),
+            });
+            return;
+          }
+
+          // Push current hash to redo stack
+          undoRedoStack.push(currentHash);
+
+          // Restore to parent
+          await gitService.restoreProjectFromSnapshot(parentHash);
+
+          addMessage({
+            type: MessageType.INFO,
+            content: `Undo successful. Restored to previous checkpoint.`,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Undo failed: ${error instanceof Error ? error.message : String(error)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
+    commands.push({
+      name: 'redo',
+      description: 'redo the last undone change',
+      action: async (_mainCommand, _subCommand, _args) => {
+        if (!config?.getCheckpointingEnabled()) {
+          addMessage({
+            type: MessageType.INFO,
+            content: 'Checkpointing is not enabled. Enable it to use /redo.',
+            timestamp: new Date(),
+          });
+          return;
+        }
+        if (!gitService) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: 'Git service not available.',
+            timestamp: new Date(),
+          });
+          return;
+        }
+        if (undoRedoStack.length === 0) {
+          addMessage({
+            type: MessageType.INFO,
+            content: 'Nothing to redo.',
+            timestamp: new Date(),
+          });
+          return;
+        }
+        try {
+          const redoHash = undoRedoStack.pop()!;
+          await gitService.restoreProjectFromSnapshot(redoHash);
+          addMessage({
+            type: MessageType.INFO,
+            content: `Redo successful. Restored to checkpoint.`,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Redo failed: ${error instanceof Error ? error.message : String(error)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
+    // --- /share command ---
+    commands.push({
+      name: 'share',
+      description: 'export conversation history to a markdown file and copy path to clipboard',
+      action: async (_mainCommand, _subCommand, _args) => {
+        try {
+          const tempDir = config?.getProjectTempDir();
+          if (!tempDir) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: 'Could not determine project temp directory.',
+              timestamp: new Date(),
+            });
+            return;
+          }
+
+          const shareDir = path.join(tempDir, 'shared');
+          await fs.mkdir(shareDir, { recursive: true });
+
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filePath = path.join(shareDir, `conversation-${timestamp}.md`);
+
+          // Build markdown from history
+          const lines: string[] = ['# Grok CLI Conversation', '', `Exported: ${new Date().toLocaleString()}`, ''];
+
+          for (const item of history) {
+            if (item.type === 'user' && item.text) {
+              lines.push(`## User\n\n${item.text}\n`);
+            } else if (item.type === 'assistant' && item.text) {
+              lines.push(`## Assistant\n\n${item.text}\n`);
+            } else if (item.type === 'info' && item.text) {
+              lines.push(`> ${item.text}\n`);
+            }
+          }
+
+          await fs.writeFile(filePath, lines.join('\n'), 'utf-8');
+
+          // Copy path to clipboard (macOS)
+          try {
+            const { execSync } = await import('child_process');
+            execSync(`echo "${filePath}" | pbcopy`);
+          } catch {
+            // Clipboard copy is best-effort
+          }
+
+          addMessage({
+            type: MessageType.INFO,
+            content: `Conversation exported to:\n${filePath}\n\nPath copied to clipboard.`,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Share failed: ${error instanceof Error ? error.message : String(error)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
+    // --- /commands command (custom commands) ---
+    commands.push({
+      name: 'commands',
+      description: 'manage custom commands. Usage: /commands [list|create <name>]',
+      action: async (_mainCommand, subCommand, args) => {
+        const projectRoot = config?.getProjectRoot();
+        if (!projectRoot) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: 'Could not determine project root.',
+            timestamp: new Date(),
+          });
+          return;
+        }
+        const commandsDir = path.join(projectRoot, '.grok-cli', 'commands');
+
+        switch (subCommand) {
+          case 'list':
+          case undefined: {
+            try {
+              await fs.mkdir(commandsDir, { recursive: true });
+              const files = await fs.readdir(commandsDir);
+              const mdFiles = files.filter((f) => f.endsWith('.md'));
+              if (mdFiles.length === 0) {
+                addMessage({
+                  type: MessageType.INFO,
+                  content: `No custom commands found.\nCreate one with: /commands create <name>`,
+                  timestamp: new Date(),
+                });
+                return;
+              }
+              const names = mdFiles.map((f) => `  /${f.replace('.md', '')}`).join('\n');
+              addMessage({
+                type: MessageType.INFO,
+                content: `Custom commands:\n${names}`,
+                timestamp: new Date(),
+              });
+            } catch (error) {
+              addMessage({
+                type: MessageType.ERROR,
+                content: `Failed to list commands: ${error instanceof Error ? error.message : String(error)}`,
+                timestamp: new Date(),
+              });
+            }
+            return;
+          }
+
+          case 'create': {
+            const cmdName = (args || '').trim();
+            if (!cmdName) {
+              addMessage({
+                type: MessageType.ERROR,
+                content: 'Usage: /commands create <name>',
+                timestamp: new Date(),
+              });
+              return;
+            }
+            try {
+              await fs.mkdir(commandsDir, { recursive: true });
+              const cmdPath = path.join(commandsDir, `${cmdName}.md`);
+              try {
+                await fs.access(cmdPath);
+                addMessage({
+                  type: MessageType.ERROR,
+                  content: `Command "/${cmdName}" already exists at ${cmdPath}`,
+                  timestamp: new Date(),
+                });
+                return;
+              } catch {
+                // File doesn't exist, good
+              }
+              await fs.writeFile(cmdPath, [
+                `# /${cmdName}`,
+                '',
+                'Describe what this command should do.',
+                'This text will be injected as a prompt to the AI when you run the command.',
+                '',
+              ].join('\n'), 'utf-8');
+              addMessage({
+                type: MessageType.INFO,
+                content: `Created custom command template: ${cmdPath}\nEdit the file, then use /${cmdName} to run it.`,
+                timestamp: new Date(),
+              });
+            } catch (error) {
+              addMessage({
+                type: MessageType.ERROR,
+                content: `Failed to create command: ${error instanceof Error ? error.message : String(error)}`,
+                timestamp: new Date(),
+              });
+            }
+            return;
+          }
+
+          default: {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Unknown /commands subcommand: ${subCommand}. Available: list, create`,
+              timestamp: new Date(),
+            });
+            return;
+          }
+        }
+      },
+    });
+
+    // --- Dynamic custom commands: scan .grok-cli/commands/ and register each .md as a slash command ---
+    {
+      const dynProjectRoot = config?.getProjectRoot();
+      if (dynProjectRoot) {
+        const commandsDir = path.join(dynProjectRoot, '.grok-cli', 'commands');
+        try {
+          const files: string[] = readdirSync(commandsDir);
+          for (const file of files) {
+            if (!file.endsWith('.md')) continue;
+            const cmdName = file.replace('.md', '');
+            // Don't override built-in commands
+            if (commands.some((c) => c.name === cmdName)) continue;
+            commands.push({
+              name: cmdName,
+              description: `Custom command from .grok-cli/commands/${file}`,
+              action: async () => {
+                try {
+                  const content = readFileSync(path.join(commandsDir, file), 'utf-8');
+                  return {
+                    shouldScheduleTool: false,
+                    message: content,
+                  };
+                } catch (error) {
+                  addMessage({
+                    type: MessageType.ERROR,
+                    content: `Failed to load command /${cmdName}: ${error instanceof Error ? error.message : String(error)}`,
+                    timestamp: new Date(),
+                  });
+                }
+              },
+            });
+          }
+        } catch {
+          // Commands dir doesn't exist yet, that's fine
+        }
+      }
+    }
 
     commands.push({
       name: 'restore',
@@ -1542,7 +2033,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
           const actionResult = await cmd.action(mainCommand, subCommand, args);
           if (
             typeof actionResult === 'object' &&
-            actionResult?.shouldScheduleTool
+            (actionResult?.shouldScheduleTool || actionResult?.message)
           ) {
             return actionResult; // Return the object for useProviderStream
           }

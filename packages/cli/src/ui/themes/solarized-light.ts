@@ -20,7 +20,6 @@ const solarizedLightColors: ColorsTheme = {
   AccentRed: '#DC322F',
   Comment: '#93A1A1',
   Gray: '#93A1A1',
-  GradientColors: ['#268BD2', '#6C71C4', '#DC322F'],
 };
 
 export const SolarizedLight = createTheme('Solarized Light', solarizedLightColors);

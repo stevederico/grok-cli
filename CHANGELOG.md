@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.4] - 2026-01-29
+
+Add multi-provider support
+  Add new tools
+  Expand slash commands
+  Refactor xAI provider
+  Update UI components
+  Update themes
+
 ## [0.3.3] - 2026-01-29
 
 ### Fixed

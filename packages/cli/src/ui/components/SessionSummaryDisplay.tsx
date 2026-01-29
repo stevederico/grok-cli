@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
-import Gradient from 'ink-gradient';
 import { Colors } from '../colors.js';
 import { formatDuration } from '../utils/formatters.js';
 import { CumulativeStats } from '../contexts/SessionContext.js';
@@ -17,6 +16,7 @@ import { FormattedStats, StatRow, StatsColumn } from './Stats.js';
 interface SessionSummaryDisplayProps {
   stats: CumulativeStats;
   duration: string;
+  sessionCost?: number;
 }
 
 // --- Main Component ---
@@ -24,6 +24,7 @@ interface SessionSummaryDisplayProps {
 export const SessionSummaryDisplay: React.FC<SessionSummaryDisplayProps> = ({
   stats,
   duration,
+  sessionCost,
 }) => {
   const cumulativeFormatted: FormattedStats = {
     inputTokens: stats.promptTokenCount,
@@ -46,13 +47,7 @@ export const SessionSummaryDisplay: React.FC<SessionSummaryDisplayProps> = ({
       alignSelf="flex-start"
     >
       <Box marginBottom={1} flexDirection="column">
-        {Colors.GradientColors ? (
-          <Gradient colors={Colors.GradientColors}>
-            <Text bold>{title}</Text>
-          </Gradient>
-        ) : (
-          <Text bold>{title}</Text>
-        )}
+        <Text bold color={Colors.AccentBlue}>{title}</Text>
       </Box>
 
       <Box marginTop={1}>
@@ -67,6 +62,9 @@ export const SessionSummaryDisplay: React.FC<SessionSummaryDisplayProps> = ({
               value={formatDuration(stats.apiTimeMs)}
             />
             <StatRow label="Total duration (wall)" value={duration} />
+            {sessionCost !== undefined && (
+              <StatRow label="Total cost" value={`$${sessionCost.toFixed(4)}`} />
+            )}
           </Box>
         </StatsColumn>
       </Box>

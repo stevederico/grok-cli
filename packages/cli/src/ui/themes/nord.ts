@@ -20,7 +20,6 @@ const nordColors: ColorsTheme = {
   AccentRed: '#BF616A',
   Comment: '#616E88',
   Gray: '#4C566A',
-  GradientColors: ['#88C0D0', '#81A1C1', '#B48EAD'],
 };
 
 export const Nord = createTheme('Nord', nordColors);

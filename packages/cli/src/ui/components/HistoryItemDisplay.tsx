@@ -84,7 +84,7 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
       />
     )}
     {item.type === 'quit' && (
-      <SessionSummaryDisplay stats={item.stats} duration={item.duration} />
+      <SessionSummaryDisplay stats={item.stats} duration={item.duration} sessionCost={item.sessionCost} />
     )}
     {item.type === 'tool_group' && (
       <ToolGroupMessage

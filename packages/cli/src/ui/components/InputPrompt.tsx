@@ -43,13 +43,21 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   onClearScreen,
   config,
   slashCommands,
-  placeholder = '  Ask a question, @file for context, /help for commands',
+  placeholder: placeholderProp,
   focus = true,
   inputWidth,
   suggestionsWidth,
   shellModeActive,
   setShellModeActive,
 }) => {
+  const placeholder = placeholderProp ?? (
+    inputWidth >= 50
+      ? '  Ask a question, @file for context, /help for commands'
+      : inputWidth >= 30
+        ? '  Ask a question, /help for commands'
+        : '  Ask a question...'
+  );
+
   const [justNavigatedHistory, setJustNavigatedHistory] = useState(false);
 
   const completion = useCompletion(
@@ -373,15 +381,9 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     buffer.visualCursor;
   const scrollVisualRow = buffer.visualScrollRow;
 
-  // Contextual mode icon: ! shell, / command, @ file, > chat
+  // Contextual prompt color: ! shell, / command, @ file, > chat
   const inputText = buffer.text.trimStart();
-  const modeIcon = shellModeActive
-    ? '! '
-    : inputText.startsWith('/')
-      ? '/ '
-      : inputText.startsWith('@')
-        ? '@ '
-        : '❯ ';
+  const modeIcon = shellModeActive ? '! ' : '❯ ';
   const modeColor = shellModeActive
     ? Colors.AccentYellow
     : inputText.startsWith('/')
@@ -464,7 +466,11 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
       {buffer.text.length === 0 && !completion.showSuggestions && focus && (
         <Box paddingLeft={2}>
           <Text color={Colors.Gray} dimColor>
-            Enter send │ !shell │ /help │ @file
+            {inputWidth >= 50
+              ? 'Enter send │ shift+tab mode │ !shell │ /help │ @file'
+              : inputWidth >= 30
+                ? 'Enter send │ !shell │ /help'
+                : 'Enter send'}
           </Text>
         </Box>
       )}

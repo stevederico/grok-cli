@@ -21,7 +21,7 @@ export interface ThemeDisplay {
   type: ThemeType;
 }
 
-export const DEFAULT_THEME: Theme = DefaultDark;
+export const DEFAULT_THEME: Theme = Nord;
 
 class ThemeManager {
   private readonly availableThemes: Theme[];

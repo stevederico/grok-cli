@@ -21,7 +21,6 @@ export interface ColorsTheme {
   AccentRed: string;
   Comment: string;
   Gray: string;
-  GradientColors?: string[];
 }
 
 export const lightTheme: ColorsTheme = {
@@ -37,23 +36,21 @@ export const lightTheme: ColorsTheme = {
   AccentRed: '#DD4C4C',
   Comment: '#008000',
   Gray: '#B7BECC',
-  GradientColors: ['#4796E4', '#847ACE', '#C3677F'],
 };
 
 export const darkTheme: ColorsTheme = {
   type: 'dark',
-  Background: '#0B0D17',        // SpaceX near-black
-  Foreground: '#ffffffff',        // DOS green text
-  LightBlue: '#5BC0EB',         // SpaceX UI cyan
-  AccentBlue: '#00FF00',        // Falcon blue
-  AccentPurple: '#00CC00',      // muted space tone
-  AccentCyan: '#4CC9F0',        // vibrant telemetry aqua
-  AccentGreen: '#00FF00',       // DOS green highlight
-  AccentYellow: '#F7C948',      // mission caution
-  AccentRed: '#EF4444',         // system alert
-  Comment: '#00AA00',           // dimmed DOS green for comments
+  Background: '#0B0D17',        // near-black
+  Foreground: '#ffffffff',        // pure white text
+  LightBlue: '#5BC0EB',         // UI cyan
+  AccentBlue: '#00D4FF',        // electric cyan
+  AccentPurple: '#7B61FF',      // violet
+  AccentCyan: '#4CC9F0',        // vibrant aqua
+  AccentGreen: '#34D399',       // emerald
+  AccentYellow: '#F7C948',      // caution
+  AccentRed: '#EF4444',         // alert
+  Comment: '#6B7280',           // neutral gray
   Gray: '#555C66',              // dark gray for structure
-  GradientColors: ['#00FF00','#00FF00'] // green → aqua → blue
 };
 
 export const ansiTheme: ColorsTheme = {

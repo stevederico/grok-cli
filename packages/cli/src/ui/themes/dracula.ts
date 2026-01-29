@@ -20,7 +20,6 @@ const draculaColors: ColorsTheme = {
   AccentRed: '#FF5555',
   Comment: '#6272A4',
   Gray: '#6272A4',
-  GradientColors: ['#BD93F9', '#FF79C6', '#FF5555'],
 };
 
 export const Dracula = createTheme('Dracula', draculaColors);

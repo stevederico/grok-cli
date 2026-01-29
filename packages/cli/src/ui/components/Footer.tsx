@@ -7,7 +7,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
-import { shortenPath, tildeifyPath, tokenLimit } from '../../core/index.js';
+import { shortenPath, tildeifyPath, tokenLimit, ApprovalMode } from '../../core/index.js';
 import { ConsoleSummaryDisplay } from './ConsoleSummaryDisplay.js';
 import process from 'node:process';
 import { MemoryUsageDisplay } from './MemoryUsageDisplay.js';
@@ -30,6 +30,7 @@ interface FooterProps {
   totalTokenCount: number;
   showVersionInfo?: boolean;
   sessionCost?: number;
+  approvalMode?: ApprovalMode;
 }
 
 /**
@@ -59,6 +60,7 @@ export const Footer: React.FC<FooterProps> = ({
   totalTokenCount,
   showVersionInfo = true,
   sessionCost,
+  approvalMode = ApprovalMode.DEFAULT,
 }) => {
   const limit = tokenLimit(model);
   const percentage = totalTokenCount / limit;
@@ -76,9 +78,20 @@ export const Footer: React.FC<FooterProps> = ({
   const dirName = targetDir.split('/').pop() || targetDir;
   const modelLabel = provider && provider.trim() ? `${provider}:${model}` : model;
 
+  const modeLabel = approvalMode === ApprovalMode.YOLO
+    ? 'YOLO'
+    : approvalMode === ApprovalMode.AUTO_EDIT
+      ? 'Auto-edit'
+      : 'Ask';
+  const modeColor = approvalMode === ApprovalMode.YOLO
+    ? Colors.AccentRed
+    : approvalMode === ApprovalMode.AUTO_EDIT
+      ? Colors.AccentGreen
+      : Colors.AccentBlue;
+
   return (
-    <Box marginTop={1} justifyContent="space-between" width="100%">
-      {/* Left: version │ project (branch) */}
+    <Box marginTop={1} justifyContent="space-between" width="100%" flexWrap="wrap">
+      {/* Left: version │ project (branch) │ mode */}
       <Box>
         {showVersionInfo && version && (
           <Text color={Colors.Gray}>
@@ -92,6 +105,8 @@ export const Footer: React.FC<FooterProps> = ({
         {branchName && (
           <Text color={Colors.Gray}> ({branchName}*)</Text>
         )}
+        <Text color={Colors.Gray}> │ </Text>
+        <Text color={modeColor}>{modeLabel}</Text>
         {debugMode && (
           <Text color={Colors.AccentRed}>
             {' ' + (debugMessage || '--debug')}

@@ -5,7 +5,15 @@ Grok CLI is an open-source interactive CLI tool that provides a flexible and pow
 
 **Supported Providers:**
 - **XAI (Grok)** - Cloud-based Grok models via xAI API
+- **OpenAI** - GPT models via OpenAI API
+- **Anthropic** - Claude models via Anthropic API
+- **Google Gemini** - Gemini models via Google AI API
+- **OpenRouter** - Multi-model routing service
+- **Groq** - Fast open-source model inference
+- **Azure OpenAI** - OpenAI models via Azure
+- **GitHub Models** - Models via GitHub inference API
 - **Ollama** - Local LLM inference with any Ollama model
+- **Custom** - Any OpenAI-compatible endpoint
 
 ## Quick Start
 
@@ -19,6 +27,27 @@ npm i -g @stevederico/grok-cli
 
 ```bash
 export XAI_API_KEY="your_xai_api_key"
+grok
+```
+
+### Using OpenAI
+
+```bash
+export OPENAI_API_KEY="your_openai_api_key"
+grok
+```
+
+### Using Anthropic (Claude)
+
+```bash
+export ANTHROPIC_API_KEY="your_anthropic_api_key"
+grok
+```
+
+### Using Google Gemini
+
+```bash
+export GEMINI_API_KEY="your_gemini_api_key"
 grok
 ```
 
@@ -36,20 +65,42 @@ export GROKCLI_PROVIDER=ollama
 grok
 ```
 
+Grok CLI auto-detects your provider based on which API key is set. To explicitly choose a provider, set `GROKCLI_PROVIDER`:
+
+```bash
+export GROKCLI_PROVIDER=anthropic
+grok
+```
+
 ## Environment Variables
 
 ### Provider Configuration
 
-| Provider | Environment Variable | Description | Default | Example |
-|----------|---------------------|-------------|---------|---------|
-| **General** | `GROKCLI_PROVIDER` | Choose provider: `xai`, `grok`, or `ollama` | `xai` | `export GROKCLI_PROVIDER="ollama"` |
-| **XAI (Grok)** | `XAI_API_KEY` | API key for xAI Grok models (required for XAI) | - | `export XAI_API_KEY="your_key"` |
-| **XAI (Grok)** | `XAI_MODEL` | Specific Grok model to use | `grok-4-0709` | `export XAI_MODEL="grok-4-0709"` |
-| **Ollama** | `GROKCLI_OLLAMA_ENDPOINT` | Ollama service endpoint | `http://localhost:11434` | `export GROKCLI_OLLAMA_ENDPOINT="http://localhost:11434"` |
-| **Ollama** | `GROKCLI_OLLAMA_MODEL` | Specific Ollama model to use | Auto-detected | `export GROKCLI_OLLAMA_MODEL="llama3.2:latest"` |
-| **Ollama** | `OLLAMA_HOST` | Alternative endpoint (fallback) | - | `export OLLAMA_HOST="http://localhost:11434"` |
-| **Debug** | `DEBUG` | Enable verbose logging | - | `export DEBUG=1` |
+| Provider | Environment Variable | Description |
+|----------|---------------------|-------------|
+| **General** | `GROKCLI_PROVIDER` | Choose provider: `xai`, `openai`, `anthropic`, `google`, `openrouter`, `groq`, `azure`, `github`, `ollama`, `custom` |
+| **XAI (Grok)** | `XAI_API_KEY` | API key for xAI Grok models |
+| **XAI (Grok)** | `XAI_MODEL` | Specific Grok model to use (default: `grok-4-0709`) |
+| **OpenAI** | `OPENAI_API_KEY` | API key for OpenAI models |
+| **Anthropic** | `ANTHROPIC_API_KEY` | API key for Anthropic Claude models |
+| **Google** | `GEMINI_API_KEY` | API key for Google Gemini models |
+| **OpenRouter** | `OPENROUTER_API_KEY` | API key for OpenRouter |
+| **Groq** | `GROQ_API_KEY` | API key for Groq |
+| **Azure OpenAI** | `AZURE_OPENAI_API_KEY` | API key for Azure OpenAI |
+| **Azure OpenAI** | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL |
+| **GitHub** | `GITHUB_TOKEN` | GitHub token for GitHub Models |
+| **Custom** | `CUSTOM_API_KEY` | API key for custom endpoint |
+| **Custom** | `CUSTOM_BASE_URL` | Base URL for custom OpenAI-compatible endpoint |
+| **Ollama** | `GROKCLI_OLLAMA_ENDPOINT` | Ollama service endpoint (default: `http://localhost:11434`) |
+| **Ollama** | `GROKCLI_OLLAMA_MODEL` | Specific Ollama model to use (auto-detected) |
+| **Ollama** | `OLLAMA_HOST` | Alternative Ollama endpoint (fallback) |
+| **Debug** | `DEBUG` | Enable verbose logging |
 
+### Provider Auto-Detection
+
+When `GROKCLI_PROVIDER` is not set, Grok CLI auto-detects based on available API keys in this priority order:
+
+`xai` > `openai` > `anthropic` > `google` > `openrouter` > `groq` > `azure` > `github` > `custom` > `ollama`
 
 ## Examples
 
@@ -85,10 +136,10 @@ export XAI_API_KEY="your_key"
 grok -p "Explain what this code does" < main.js
 ```
 
-Use Ollama for code review:
+Use Anthropic for code review:
 
 ```sh
-export GROKCLI_PROVIDER=ollama
+export ANTHROPIC_API_KEY="your_key"
 echo "Review this for bugs" | grok -p "analyze the code"
 ```
 

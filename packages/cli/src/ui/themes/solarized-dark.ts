@@ -20,7 +20,6 @@ const solarizedDarkColors: ColorsTheme = {
   AccentRed: '#DC322F',
   Comment: '#586E75',
   Gray: '#657B83',
-  GradientColors: ['#268BD2', '#2AA198', '#859900'],
 };
 
 export const SolarizedDark = createTheme('Solarized Dark', solarizedDarkColors);

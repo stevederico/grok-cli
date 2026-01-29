@@ -26,21 +26,20 @@ export function useAutoAcceptIndicator({
   useInput((input, key) => {
     let nextApprovalMode: ApprovalMode | undefined;
 
-    if (key.ctrl && input === 'y') {
-      nextApprovalMode =
-        config.getApprovalMode() === ApprovalMode.YOLO
-          ? ApprovalMode.DEFAULT
-          : ApprovalMode.YOLO;
-    } else if (key.tab && key.shift) {
-      nextApprovalMode =
-        config.getApprovalMode() === ApprovalMode.AUTO_EDIT
-          ? ApprovalMode.DEFAULT
-          : ApprovalMode.AUTO_EDIT;
+    // Shift+Tab cycles: DEFAULT → AUTO_EDIT → YOLO → DEFAULT
+    if (key.tab && key.shift) {
+      const current = config.getApprovalMode();
+      if (current === ApprovalMode.DEFAULT) {
+        nextApprovalMode = ApprovalMode.AUTO_EDIT;
+      } else if (current === ApprovalMode.AUTO_EDIT) {
+        nextApprovalMode = ApprovalMode.YOLO;
+      } else {
+        nextApprovalMode = ApprovalMode.DEFAULT;
+      }
     }
 
     if (nextApprovalMode) {
       config.setApprovalMode(nextApprovalMode);
-      // Update local state immediately for responsiveness
       setShowAutoAcceptIndicator(nextApprovalMode);
     }
   });

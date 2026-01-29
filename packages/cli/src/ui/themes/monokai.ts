@@ -20,7 +20,6 @@ const monokaiColors: ColorsTheme = {
   AccentRed: '#F92672',
   Comment: '#75715E',
   Gray: '#75715E',
-  GradientColors: ['#F92672', '#AE81FF', '#66D9EF'],
 };
 
 export const Monokai = createTheme('Monokai', monokaiColors);

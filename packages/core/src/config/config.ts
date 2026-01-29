@@ -23,6 +23,12 @@ import { WebFetchTool } from '../tools/web-fetch.js';
 import { WebSearchTool } from '../tools/web-search.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
 import { MemoryTool, setGrokMdFilename } from '../tools/memoryTool.js';
+import { PatchTool } from '../tools/patch.js';
+import { LspDiagnosticsTool } from '../tools/lsp.js';
+import { TodoWriteTool } from '../tools/todo-write.js';
+import { TodoReadTool } from '../tools/todo-read.js';
+import { AskUserTool } from '../tools/ask-user.js';
+import { initTodoStore } from '../tools/todo-store.js';
 import { GrokClient } from '../core/types.js';
 import { GROKCLI_CONFIG_DIR as GROKCLI_DIR } from '../tools/memoryTool.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
@@ -459,6 +465,15 @@ export function createToolRegistry(config: Config): Promise<ToolRegistry> {
   registerCoreTool(ReadManyFilesTool, targetDir, config);
   registerCoreTool(ShellTool, config);
   registerCoreTool(MemoryTool);
+  registerCoreTool(PatchTool, config);
+  registerCoreTool(LspDiagnosticsTool, config);
+  registerCoreTool(TodoWriteTool);
+  registerCoreTool(TodoReadTool);
+  registerCoreTool(AskUserTool);
+
+  // Initialize the todo store with project temp dir
+  initTodoStore(config.getProjectTempDir());
+
   return (async () => {
     await registry.discoverTools();
     return registry;

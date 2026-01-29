@@ -112,6 +112,7 @@ export type HistoryItemQuit = HistoryItemBase & {
   type: 'quit';
   stats: CumulativeStats;
   duration: string;
+  sessionCost?: number;
 };
 
 export type HistoryItemToolGroup = HistoryItemBase & {
@@ -186,6 +187,7 @@ export type Message =
       timestamp: Date;
       stats: CumulativeStats;
       duration: string;
+      sessionCost?: number;
       content?: string;
     };
 

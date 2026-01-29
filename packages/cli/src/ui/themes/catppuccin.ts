@@ -20,7 +20,6 @@ const catppuccinMochaColors: ColorsTheme = {
   AccentRed: '#F38BA8',
   Comment: '#6C7086',
   Gray: '#585B70',
-  GradientColors: ['#CBA6F7', '#F38BA8', '#FAB387'],
 };
 
 export const CatppuccinMocha = createTheme('Catppuccin Mocha', catppuccinMochaColors);

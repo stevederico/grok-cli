@@ -19,9 +19,10 @@ if (!fs.existsSync(packageJsonPath)) {
   errors.push(`Error: package.json not found in ${process.cwd()}`);
 } else {
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-  if (packageJson.repository !== 'google-gemini/grok-cli') {
+  const repoUrl = typeof packageJson.repository === 'object' ? packageJson.repository.url : packageJson.repository;
+  if (!repoUrl || !repoUrl.includes('stevederico/grok-cli')) {
     errors.push(
-      `Error: The "repository" field in ${packageJsonPath} must be "google-gemini/grok-cli".`,
+      `Error: The "repository" field in ${packageJsonPath} must reference "stevederico/grok-cli".`,
     );
   }
 }

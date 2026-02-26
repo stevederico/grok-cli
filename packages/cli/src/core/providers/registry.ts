@@ -63,6 +63,31 @@ export function hasProvider(name: string): boolean {
 }
 
 /**
+ * Maps provider names to their required environment variable for API key auth.
+ * Ollama is excluded — it needs no API key.
+ */
+export const PROVIDER_ENV_VAR_MAP: Record<string, string> = {
+  xai: 'XAI_API_KEY',
+  openai: 'OPENAI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+  google: 'GEMINI_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
+  groq: 'GROQ_API_KEY',
+  azure: 'AZURE_OPENAI_API_KEY',
+  github: 'GITHUB_TOKEN',
+  custom: 'CUSTOM_API_KEY',
+};
+
+/**
+ * Returns the environment variable name for a provider's API key.
+ * @param providerName The provider name (e.g., 'xai', 'anthropic')
+ * @returns The env var name, or undefined for providers that don't need a key (e.g., 'ollama')
+ */
+export function getEnvVarForProvider(providerName: string): string | undefined {
+  return PROVIDER_ENV_VAR_MAP[providerName];
+}
+
+/**
  * Validate if a provider is properly configured
  */
 export async function validateProvider(providerName: string): Promise<{ healthy: boolean; issues: string[] }> {
@@ -77,19 +102,7 @@ export async function validateProvider(providerName: string): Promise<{ healthy:
     const provider = getProvider(providerName);
 
     if (!provider.isConfigured()) {
-      const envVarMap: Record<string, string> = {
-        xai: 'XAI_API_KEY',
-        openai: 'OPENAI_API_KEY',
-        anthropic: 'ANTHROPIC_API_KEY',
-        google: 'GEMINI_API_KEY',
-        openrouter: 'OPENROUTER_API_KEY',
-        groq: 'GROQ_API_KEY',
-        azure: 'AZURE_OPENAI_API_KEY',
-        github: 'GITHUB_TOKEN',
-        custom: 'CUSTOM_API_KEY',
-      };
-
-      const envVar = envVarMap[providerName];
+      const envVar = getEnvVarForProvider(providerName);
       if (envVar) {
         issues.push(`${envVar} environment variable not set`);
       } else if (providerName === 'ollama') {

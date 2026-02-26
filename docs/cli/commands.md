@@ -97,7 +97,12 @@ Slash commands provide meta-level control over the CLI itself.
 
 - **`/auth`**
 
-  - **Description:** Open a dialog that lets you change the authentication method.
+  - **Description:** Configure API keys for any provider. Keys are saved to `~/.grok-cli/.env` and loaded immediately.
+  - **Sub-commands:**
+    - **`show`**: Display all configured API keys (masked) and base URL.
+    - **`<key>`**: Save an API key for the current provider (e.g., `/auth xai-abc123...`).
+    - **`baseurl <url>`**: Set a custom `XAI_BASE_URL` endpoint.
+  - **Note:** Running `/auth` with no sub-command opens an interactive dialog to select a provider and enter an API key.
 
 - **`/about`**
 

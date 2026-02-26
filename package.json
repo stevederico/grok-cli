@@ -1,6 +1,6 @@
 {
   "name": "@stevederico/grok-cli",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Grok CLI - Universal LLM CLI",
   "keywords": ["cli", "ai", "grok", "llm", "xai", "ollama", "interactive"],
   "homepage": "https://github.com/stevederico/grok-cli#readme",
@@ -31,6 +31,7 @@
     "provider-tests": "npm run provider-tests --workspace packages/core",
     "test:e2e": "npm run test:integration:sandbox:none -- --verbose --keep-output",
     "test:integration:none": "GROKCLI_SANDBOX=false node integration-tests/run-tests.js",
+    "dev": "npm run build && npm run start",
     "start": "node scripts/start.js",
     "debug": "cross-env DEBUG=1 node --inspect-brk scripts/start.js",
     "lint:fix": "eslint . --fix && eslint integration-tests --fix",

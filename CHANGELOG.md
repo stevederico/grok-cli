@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.6] - 2026-02-26
+
+  Add API key setup dialog
+  Add /setup alias for /auth
+  Expand /auth show all providers
+  Expand auth validation per-provider
+  Update README quick start
+  Update commands documentation
+
 ## [0.3.4] - 2026-01-29
 
 Add multi-provider support

@@ -24,35 +24,25 @@ Grok CLI is an open-source interactive CLI tool that provides a flexible and pow
 npm i -g @stevederico/grok-cli
 ```
 
-### Using XAI (Grok)
+### Setup API Key
+
+The fastest way to get started is the built-in setup dialog:
+
+```bash
+grok
+# Type /auth and press Enter
+# Select a provider → enter your API key
+# Key is saved to ~/.grok-cli/.env and loaded immediately
+```
+
+You can also set keys via environment variables:
 
 ```bash
 export XAI_API_KEY="your_xai_api_key"
 grok
 ```
 
-### Using OpenAI
-
-```bash
-export OPENAI_API_KEY="your_openai_api_key"
-grok
-```
-
-### Using Anthropic (Claude)
-
-```bash
-export ANTHROPIC_API_KEY="your_anthropic_api_key"
-grok
-```
-
-### Using Google Gemini
-
-```bash
-export GEMINI_API_KEY="your_gemini_api_key"
-grok
-```
-
-### Using Ollama
+### Using Ollama (Local)
 
 ```bash
 # Start Ollama service

@@ -21,6 +21,7 @@ import {
   getAvailableProviders,
   validateProvider,
   getProvider,
+  getEnvVarForProvider,
   GROKCLI_CONFIG_DIR,
 } from '../../core/index.js';
 import { useSessionStats, calculateCost, MODEL_PRICING } from '../contexts/SessionContext.js';
@@ -1278,21 +1279,11 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
       },
       {
         name: 'auth',
+        altName: 'setup',
         description: 'set API key or base URL: /auth <key> | /auth baseurl <url>',
         action: async (_mainCommand: string, subCommand?: string, args?: string) => {
           if (!subCommand) {
-            addMessage({
-              type: MessageType.INFO,
-              content: [
-                'Usage:',
-                '  /auth <api-key>           Set XAI_API_KEY',
-                '  /auth baseurl <url>       Set XAI_BASE_URL (custom endpoint)',
-                '  /auth show                Show current auth config',
-                '',
-                'Saves to ~/.grok-cli/.env and applies immediately.',
-              ].join('\n'),
-              timestamp: new Date(),
-            });
+            openAuthDialog();
             return;
           }
 
@@ -1323,13 +1314,22 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
 
           try {
             if (subCommand === 'show') {
-              const maskedKey = process.env.XAI_API_KEY
-                ? process.env.XAI_API_KEY.slice(0, 7) + '...' + process.env.XAI_API_KEY.slice(-4)
-                : '(not set)';
+              const lines: string[] = [];
+              const allProviders = getAvailableProviders();
+              for (const pName of allProviders) {
+                const envVar = getEnvVarForProvider(pName);
+                if (!envVar) continue; // skip ollama
+                const value = process.env[envVar];
+                const masked = value
+                  ? value.slice(0, 7) + '...' + value.slice(-4)
+                  : '(not set)';
+                lines.push(`${envVar}: ${masked}`);
+              }
               const baseUrl = process.env.XAI_BASE_URL || 'https://api.x.ai/v1 (default)';
+              lines.push(`XAI_BASE_URL: ${baseUrl}`);
               addMessage({
                 type: MessageType.INFO,
-                content: `XAI_API_KEY:  ${maskedKey}\nXAI_BASE_URL: ${baseUrl}`,
+                content: lines.join('\n'),
                 timestamp: new Date(),
               });
               return;
@@ -1354,12 +1354,22 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
               return;
             }
 
-            // Default: treat subCommand as the API key
+            // Default: treat subCommand as the API key for current provider
             const apiKey = args ? `${subCommand} ${args}`.trim() : subCommand;
-            await setEnvVar('XAI_API_KEY', apiKey);
+            const currentProvider = config?.getProvider() || 'xai';
+            const envVar = getEnvVarForProvider(currentProvider);
+            if (!envVar) {
+              addMessage({
+                type: MessageType.ERROR,
+                content: `Provider "${currentProvider}" does not use an API key.`,
+                timestamp: new Date(),
+              });
+              return;
+            }
+            await setEnvVar(envVar, apiKey);
             addMessage({
               type: MessageType.INFO,
-              content: `API key saved to ${envFilePath} and loaded into current session.`,
+              content: `${envVar} saved to ${envFilePath} and loaded into current session.`,
               timestamp: new Date(),
             });
           } catch (e) {

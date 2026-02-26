@@ -241,6 +241,7 @@ export async function loadCliConfig(
     model: argv.model!,
     provider: argv.provider!,
     extensionContextFilePaths,
+    hooksSettings: settings.hooks,
   });
   
   // Initialize the tool registry

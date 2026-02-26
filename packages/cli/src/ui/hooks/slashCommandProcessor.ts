@@ -25,6 +25,7 @@ import {
   GROKCLI_CONFIG_DIR,
 } from '../../core/index.js';
 import { useSessionStats, calculateCost, MODEL_PRICING } from '../contexts/SessionContext.js';
+import { runHooks } from '../../hooks/hookRunner.js';
 import {
   Message,
   MessageType,
@@ -1265,7 +1266,12 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
             },
           ]);
 
-          setTimeout(() => {
+          setTimeout(async () => {
+            if (config) {
+              await runHooks('SessionEnd', config.getHooksSettings(), {
+                GROK_SESSION_ID: config.getSessionId(),
+              }, { blocking: true });
+            }
             process.exit(0);
           }, 100);
         },
@@ -1460,7 +1466,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
     // --- /init command ---
     commands.push({
       name: 'init',
-      description: 'initialize .grok-cli/ project config with GROKCLI.md template and .grokcliignore',
+      description: 'initialize .grok-cli/ project config with GROKCLI.md template and .grok-cli-ignore',
       action: async (_mainCommand, _subCommand, _args) => {
         const projectRoot = config?.getProjectRoot();
         if (!projectRoot) {
@@ -1473,7 +1479,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
         }
         const grokDir = path.join(projectRoot, '.grok-cli');
         const mdPath = path.join(grokDir, 'GROKCLI.md');
-        const ignorePath = path.join(projectRoot, '.grokcliignore');
+        const ignorePath = path.join(projectRoot, '.grok-cli-ignore');
         const commandsDir = path.join(grokDir, 'commands');
 
         try {
@@ -1499,7 +1505,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
             ].join('\n'), 'utf-8');
           }
 
-          // Create .grokcliignore if it doesn't exist
+          // Create .grok-cli-ignore if it doesn't exist
           try {
             await fs.access(ignorePath);
           } catch {
@@ -1884,7 +1890,7 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
           if (!checkpointDir) {
             addMessage({
               type: MessageType.ERROR,
-              content: 'Could not determine the .grokcli directory path.',
+              content: 'Could not determine the .grok-cli directory path.',
               timestamp: new Date(),
             });
             return;

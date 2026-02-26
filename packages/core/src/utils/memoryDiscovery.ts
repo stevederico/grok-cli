@@ -136,7 +136,7 @@ async function getGrokMdFilePathsInternal(
         );
       }
 
-      // Skip the global .grokcli directory itself during upward scan from CWD,
+      // Skip the global .grok-cli directory itself during upward scan from CWD,
       // as global is handled separately and explicitly first.
       if (currentDir === path.join(resolvedHome, GROKCLI_CONFIG_DIR)) {
         if (debugMode) {

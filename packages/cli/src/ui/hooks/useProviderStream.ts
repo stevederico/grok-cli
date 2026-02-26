@@ -50,6 +50,7 @@ import {
   TrackedCancelledToolCall,
 } from './useReactToolScheduler.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
+import { runHooks } from '../../hooks/hookRunner.js';
 
 const MAX_TOOL_CALL_ROUNDS = 15;
 const MAX_DUPLICATE_TOOL_CALLS = 3;
@@ -177,6 +178,20 @@ export const useProviderStream = (
     }
     return StreamingState.Idle;
   }, [isResponding, toolCalls]);
+
+  // Fire Stop hooks when streaming transitions from Responding → Idle
+  const prevStreamingStateRef = useRef(streamingState);
+  useEffect(() => {
+    if (
+      prevStreamingStateRef.current === StreamingState.Responding &&
+      streamingState === StreamingState.Idle
+    ) {
+      runHooks('Stop', config.getHooksSettings(), {
+        GROK_SESSION_ID: config.getSessionId(),
+      });
+    }
+    prevStreamingStateRef.current = streamingState;
+  }, [streamingState, config]);
 
   useInput((_input, key) => {
     if (streamingState === StreamingState.Responding && key.escape) {

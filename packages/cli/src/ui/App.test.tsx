@@ -186,7 +186,7 @@ describe('App UI', () => {
       settings: {},
     };
     const workspaceSettingsFile: SettingsFile = {
-      path: '/workspace/.grokcli/settings.json',
+      path: '/workspace/.grok-cli/settings.json',
       settings: {
         ...settings,
       },

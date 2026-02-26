@@ -102,7 +102,7 @@ export class ReadFileTool extends BaseTool<ReadFileToolParams, ToolResult> {
         params.absolute_path,
         this.rootDirectory,
       );
-      return `File path '${shortenPath(relativePath)}' is ignored by .grokcliignore pattern(s).`;
+      return `File path '${shortenPath(relativePath)}' is ignored by .grok-cli-ignore pattern(s).`;
     }
 
     return null;

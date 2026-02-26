@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.7] - 2026-02-26
+
+  Consolidate .grokcli to .grok-cli
+  Rename .grokcliignore to .grok-cli-ignore
+  Add hook system
+  Add lifecycle hook events
+  Wire hook integration points
+  Update settings schema
+  Update config plumbing
+
 ## [0.3.6] - 2026-02-26
 
   Add API key setup dialog

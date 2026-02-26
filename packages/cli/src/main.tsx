@@ -24,6 +24,7 @@ import { getStartupWarnings } from './utils/startupWarnings.js';
 import { runNonInteractive } from './nonInteractiveCli.js';
 import { loadExtensions, Extension } from './config/extension.js';
 import { cleanupCheckpoints } from './utils/cleanup.js';
+import { runHooks } from './hooks/hookRunner.js';
 import {
   ApprovalMode,
   Config,
@@ -98,6 +99,11 @@ export async function main() {
 
   const extensions = loadExtensions(workspaceRoot);
   const config = await loadCliConfig(settings.merged, extensions, sessionId());
+
+  // Fire SessionStart hooks (non-blocking)
+  runHooks('SessionStart', config.getHooksSettings(), {
+    GROK_SESSION_ID: config.getSessionId(),
+  });
 
   // Provider-specific initialization
   // this has to go after load cli because thats where the env is set

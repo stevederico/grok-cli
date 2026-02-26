@@ -109,7 +109,7 @@ describe('grok.tsx main function', () => {
       settings: {},
     };
     const workspaceSettingsFile: SettingsFile = {
-      path: '/workspace/.grokcli/settings.json',
+      path: '/workspace/.grok-cli/settings.json',
       settings: {},
     };
     const mockLoadedSettings = new LoadedSettings(

@@ -7,16 +7,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
-import { 
-  MCPServerConfig, 
-  getErrorMessage, 
-  BugCommandSettings, 
-  AuthType 
+import {
+  MCPServerConfig,
+  getErrorMessage,
+  BugCommandSettings,
+  AuthType
 } from '../core/index.js';
 import stripJsonComments from 'strip-json-comments';
 import { DefaultDark } from '../ui/themes/default.js';
+import { HooksSettings, mergeHooks } from '../hooks/hookRunner.js';
 
-export const SETTINGS_DIRECTORY_NAME = '.grokcli';
+export const SETTINGS_DIRECTORY_NAME = '.grok-cli';
 export const USER_SETTINGS_DIR = path.join(homedir(), SETTINGS_DIRECTORY_NAME);
 export const USER_SETTINGS_PATH = path.join(USER_SETTINGS_DIR, 'settings.json');
 
@@ -60,6 +61,9 @@ export interface Settings {
   // UI setting. Does not display the ANSI-controlled terminal title.
   hideWindowTitle?: boolean;
 
+  // Lifecycle hooks executed on session events.
+  hooks?: HooksSettings;
+
   // Add other settings here.
 }
 
@@ -98,6 +102,10 @@ export class LoadedSettings {
     return {
       ...this.user.settings,
       ...this.workspace.settings,
+      hooks: mergeHooks(
+        this.user.settings.hooks,
+        this.workspace.settings.hooks,
+      ),
     };
   }
 

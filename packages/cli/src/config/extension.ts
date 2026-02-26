@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-export const EXTENSIONS_DIRECTORY_NAME = path.join('.grokcli', 'extensions');
+export const EXTENSIONS_DIRECTORY_NAME = path.join('.grok-cli', 'extensions');
 export const EXTENSIONS_CONFIG_FILENAME = 'grok-extension.json';
 
 export interface Extension {

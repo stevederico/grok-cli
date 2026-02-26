@@ -29,6 +29,7 @@ import {
   ModifyContext,
   modifyWithEditor,
 } from '../tools/modifiable-tool.js';
+import { runHooks } from '../../hooks/hookRunner.js';
 
 export type ValidatingToolCall = {
   status: 'validating';
@@ -459,6 +460,12 @@ export class CoreToolScheduler {
 
       const { request: reqInfo, tool: toolInstance } = toolCall;
       try {
+        // Fire PreToolUse hooks (blocking)
+        await runHooks('PreToolUse', this.config.getHooksSettings(), {
+          GROK_SESSION_ID: this.config.getSessionId(),
+          GROK_TOOL_NAME: reqInfo.name || reqInfo.toolName,
+        }, { blocking: true });
+
         if (this.approvalMode === ApprovalMode.YOLO) {
           this.setStatusInternal(reqInfo.callId, 'scheduled');
         } else {
@@ -484,6 +491,11 @@ export class CoreToolScheduler {
               'awaiting_approval',
               wrappedConfirmationDetails,
             );
+            // Fire Notification hooks (non-blocking)
+            runHooks('Notification', this.config.getHooksSettings(), {
+              GROK_SESSION_ID: this.config.getSessionId(),
+              GROK_NOTIFICATION_TYPE: 'permission_prompt',
+            });
           } else {
             this.setStatusInternal(reqInfo.callId, 'scheduled');
           }

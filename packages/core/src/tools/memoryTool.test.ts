@@ -87,7 +87,7 @@ describe('MemoryTool', () => {
   describe('performAddMemoryEntry (static method)', () => {
     const testFilePath = path.join(
       '/mock/home',
-      '.grokcli',
+      '.grok-cli',
       DEFAULT_CONTEXT_FILENAME, // Use the default for basic tests
     );
 
@@ -207,7 +207,7 @@ describe('MemoryTool', () => {
       // Use getCurrentGrokMdFilename for the default expectation before any setGrokMdFilename calls in a test
       const expectedFilePath = path.join(
         '/mock/home',
-        '.grokcli',
+        '.grok-cli',
         getCurrentGrokMdFilename(), // This will be DEFAULT_CONTEXT_FILENAME unless changed by a test
       );
 

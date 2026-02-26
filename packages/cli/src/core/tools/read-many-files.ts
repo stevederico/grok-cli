@@ -258,13 +258,13 @@ Use this tool when the user's query implies needing the content of several files
 
     let excludeDesc = `Excluding: ${finalExclusionPatternsForDescription.length > 0 ? `patterns like \`${finalExclusionPatternsForDescription.slice(0, 2).join('`, `')}${finalExclusionPatternsForDescription.length > 2 ? '...`' : '`'}` : 'none specified'}`;
 
-    // Add a note if .grokcliignore patterns contributed to the final list of exclusions
+    // Add a note if .grok-cli-ignore patterns contributed to the final list of exclusions
     if (this.grokIgnorePatterns.length > 0) {
       const grokPatternsInEffect = this.grokIgnorePatterns.filter((p) =>
         finalExclusionPatternsForDescription.includes(p),
       ).length;
       if (grokPatternsInEffect > 0) {
-        excludeDesc += ` (includes ${grokPatternsInEffect} from .grokcliignore)`;
+        excludeDesc += ` (includes ${grokPatternsInEffect} from .grok-cli-ignore)`;
       }
     }
 

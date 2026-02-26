@@ -61,6 +61,7 @@ import {
   EditorType,
 } from '../core/index.js';
 import { validateAuthMethod } from '../config/auth.js';
+import { runHooks } from '../hooks/hookRunner.js';
 import { useLogger } from './hooks/useLogger.js';
 import { StreamingContext } from './contexts/StreamingContext.js';
 import {
@@ -475,6 +476,10 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       if (config.getDebugMode()) {
         console.debug(`[DEBUG] App - handleFinalSubmit called with: '${submittedValue}'`);
       }
+      // Fire UserPromptSubmit hooks (non-blocking)
+      runHooks('UserPromptSubmit', config.getHooksSettings(), {
+        GROK_SESSION_ID: config.getSessionId(),
+      });
       const trimmedValue = submittedValue.trim();
       if (trimmedValue.length > 0) {
         // Handle /plan command

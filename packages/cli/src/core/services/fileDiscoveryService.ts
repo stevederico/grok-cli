@@ -8,7 +8,7 @@ import { GitIgnoreParser, GitIgnoreFilter } from '../utils/gitIgnoreParser.js';
 import { isGitRepository } from '../utils/gitUtils.js';
 import * as path from 'path';
 
-const GROK_IGNORE_FILE_NAME = '.grokcliignore';
+const GROK_IGNORE_FILE_NAME = '.grok-cli-ignore';
 
 export interface FilterFilesOptions {
   respectGitIgnore?: boolean;
@@ -85,7 +85,7 @@ export class FileDiscoveryService {
   }
 
   /**
-   * Returns loaded patterns from .grokcliignore
+   * Returns loaded patterns from .grok-cli-ignore
    */
   getGrokIgnorePatterns(): string[] {
     return this.grokIgnoreFilter?.getPatterns() ?? [];

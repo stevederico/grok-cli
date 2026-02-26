@@ -28,7 +28,7 @@ describe('ReadManyFilesTool', () => {
     tempDirOutsideRoot = fs.mkdtempSync(
       path.join(os.tmpdir(), 'read-many-files-external-'),
     );
-    fs.writeFileSync(path.join(tempRootDir, '.grokcliignore'), 'foo.*');
+    fs.writeFileSync(path.join(tempRootDir, '.grok-cli-ignore'), 'foo.*');
     const fileService = new FileDiscoveryService(tempRootDir);
     const mockConfig = {
       getFileService: () => fileService,
@@ -363,7 +363,7 @@ describe('ReadManyFilesTool', () => {
       ]);
     });
 
-    it('should return error if path is ignored by a .grokcliignore pattern', async () => {
+    it('should return error if path is ignored by a .grok-cli-ignore pattern', async () => {
       createFile('foo.bar', '');
       createFile('bar.ts', '');
       createFile('foo.quux', '');

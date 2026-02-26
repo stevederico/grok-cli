@@ -20,7 +20,7 @@ import { MemoryTool, GROKCLI_CONFIG_DIR } from '../tools/memoryTool.js';
 
 export function getCoreSystemPrompt(userMemory?: string): string {
   // if GROK_SYSTEM_MD is set (and not 0|false), override system prompt from file
-  // default path is .grokcli/system.md but can be modified via custom path in GROK_SYSTEM_MD
+  // default path is .grok-cli/system.md but can be modified via custom path in GROK_SYSTEM_MD
   let systemMdEnabled = false;
   let systemMdPath = path.join(GROKCLI_CONFIG_DIR, 'system.md');
   const systemMdVar = process.env.GROK_SYSTEM_MD?.toLowerCase();

@@ -11,6 +11,7 @@ import {
   ContentGeneratorConfig,
   createContentGeneratorConfig,
 } from '../core/types.js';
+import { HooksSettings } from '../../hooks/hookRunner.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { LSTool } from '../tools/ls.js';
 import { ReadFileTool } from '../tools/read-file.js';
@@ -115,6 +116,7 @@ export interface ConfigParameters {
   model: string;
   provider?: string;
   extensionContextFilePaths?: string[];
+  hooksSettings?: HooksSettings;
 }
 
 export class Config {
@@ -153,6 +155,7 @@ export class Config {
   private readonly model: string;
   private provider: string;
   private readonly extensionContextFilePaths: string[];
+  private readonly hooksSettings: HooksSettings | undefined;
   private modelSwitchedDuringSession: boolean = false;
   flashFallbackHandler?: FlashFallbackHandler;
 
@@ -193,6 +196,7 @@ export class Config {
       process.env.GROKCLI_PROVIDER ?? 
       (process.env.XAI_API_KEY ? 'grok' : 'ollama');
     this.extensionContextFilePaths = params.extensionContextFilePaths ?? [];
+    this.hooksSettings = params.hooksSettings;
 
     if (params.contextFileName) {
       setContextMdFilename(params.contextFileName);
@@ -434,6 +438,10 @@ export class Config {
 
   getExtensionContextFilePaths(): string[] {
     return this.extensionContextFilePaths;
+  }
+
+  getHooksSettings(): HooksSettings | undefined {
+    return this.hooksSettings;
   }
 
   async getGitService(): Promise<GitService> {

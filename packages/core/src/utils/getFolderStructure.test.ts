@@ -295,13 +295,13 @@ describe('getFolderStructure gitignore', () => {
           createDirent('file1.txt', 'file'),
           createDirent('node_modules', 'dir'),
           createDirent('ignored.txt', 'file'),
-          createDirent('.grokcli', 'dir'),
+          createDirent('.grok-cli', 'dir'),
         ] as any;
       }
       if (path === '/test/project/node_modules') {
         return [createDirent('some-package', 'dir')] as any;
       }
-      if (path === '/test/project/.grokcli') {
+      if (path === '/test/project/.grok-cli') {
         return [
           createDirent('config.yaml', 'file'),
           createDirent('logs.json', 'file'),
@@ -313,7 +313,7 @@ describe('getFolderStructure gitignore', () => {
     (fs.readFileSync as Mock).mockImplementation((p) => {
       const path = p.toString();
       if (path === '/test/project/.gitignore') {
-        return 'ignored.txt\nnode_modules/\n.grokcli/\n!/.grokcli/config.yaml';
+        return 'ignored.txt\nnode_modules/\n.grok-cli/\n!/.grok-cli/config.yaml';
       }
       return '';
     });

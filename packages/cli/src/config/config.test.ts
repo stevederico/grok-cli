@@ -154,7 +154,7 @@ describe('Hierarchical Memory Loading (config.ts) - Placeholder Suite', () => {
   // Example of a previously failing test structure:
   /*
   it('should correctly use mocked homedir for global path', async () => {
-    const MOCK_GROK_DIR_LOCAL = path.join('/mock/home/user', '.grokcli');
+    const MOCK_GROK_DIR_LOCAL = path.join('/mock/home/user', '.grok-cli');
     const MOCK_GLOBAL_PATH_LOCAL = path.join(MOCK_GROK_DIR_LOCAL, 'GROKCLI.md');
     mockFs({
       [MOCK_GLOBAL_PATH_LOCAL]: { type: 'file', content: 'GlobalContentOnly' }

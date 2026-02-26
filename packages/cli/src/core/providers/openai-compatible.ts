@@ -126,7 +126,10 @@ export class OpenAICompatibleProvider extends Provider {
     try {
       let messages: any[] = [];
 
-      if (options.tool_results && options.tool_results.length > 0) {
+      if (options.messages) {
+        // Use pre-built message array from ConversationHistory
+        messages = options.messages;
+      } else if (options.tool_results && options.tool_results.length > 0) {
         if (isDebugEnabled()) console.log(`🔧 ${this.providerDisplayName} - Processing tool results continuation with ${options.tool_results.length} results`);
         messages.push({ role: 'user', content: prompt });
 
@@ -259,7 +262,10 @@ export class OpenAICompatibleProvider extends Provider {
 
     let messages: any[] = [];
 
-    if (options.tool_results && options.tool_results.length > 0) {
+    if (options.messages) {
+      // Use pre-built message array from ConversationHistory
+      messages = options.messages;
+    } else if (options.tool_results && options.tool_results.length > 0) {
       messages.push({ role: 'user', content: prompt });
       const prevResponse = (options as any).previous_assistant_response;
       if (prevResponse?.tool_calls) {

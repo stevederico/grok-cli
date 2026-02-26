@@ -14,6 +14,7 @@ export interface QueryOptions {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  messages?: Array<{ role: string; content: string | null; tool_calls?: any[]; tool_call_id?: string }>;
   [key: string]: any;
 }
 

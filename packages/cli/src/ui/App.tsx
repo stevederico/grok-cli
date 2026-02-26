@@ -45,6 +45,7 @@ import { Colors } from './colors.js';
 import { Help } from './components/Help.js';
 import { loadHierarchicalMemory } from '../config/config.js';
 import { LoadedSettings } from '../config/settings.js';
+import { AgentProfile } from '../core/agents/AgentProfile.js';
 
 import { useConsolePatcher } from './components/ConsolePatcher.js';
 import { DetailedMessagesDisplay } from './components/DetailedMessagesDisplay.js';
@@ -281,6 +282,21 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     config.setFlashFallbackHandler(flashFallbackHandler);
   }, [config, addItem]);
 
+  // Agent state refs — populated by useProviderStream, consumed by useSlashCommandProcessor.
+  // Refs bridge the hook ordering (slash processor runs before provider stream).
+  const switchAgentRef = useRef<((name: string, customAgents?: Record<string, AgentProfile>) => void) | null>(null);
+  const clearConversationHistoryRef = useRef<(() => void) | null>(null);
+  const [activeAgentName, setActiveAgentNameLocal] = useState<string>('default');
+
+  const switchAgentBridge = useCallback((name: string, customAgents?: Record<string, AgentProfile>) => {
+    switchAgentRef.current?.(name, customAgents);
+    setActiveAgentNameLocal(name);
+  }, []);
+
+  const clearConversationHistoryBridge = useCallback(() => {
+    clearConversationHistoryRef.current?.();
+  }, []);
+
   const {
     handleSlashCommand,
     slashCommands,
@@ -305,6 +321,9 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     openModelDialog,
     openThemeDialog,
     openAuthDialog,
+    activeAgentName,
+    switchAgentBridge,
+    clearConversationHistoryBridge,
   );
   const pendingHistoryItems = [...pendingSlashCommandHistoryItems];
 
@@ -454,6 +473,10 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     editPlan,
     setPlanMode,
     planOriginalPromptRef,
+    activeAgentName: providerActiveAgentName,
+    switchAgent,
+    clearConversationHistory,
+    refreshSystemPrompt,
   } = useProviderStream(
     config,
     history,
@@ -467,6 +490,16 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     performMemoryRefresh,
   );
   pendingHistoryItems.push(...pendingProviderHistoryItems);
+
+  // Populate agent bridge refs so slash command processor can call them
+  switchAgentRef.current = switchAgent;
+  clearConversationHistoryRef.current = clearConversationHistory;
+
+  // Sync agent name from provider stream to local state (for slash command display)
+  useEffect(() => {
+    setActiveAgentNameLocal(providerActiveAgentName);
+  }, [providerActiveAgentName]);
+
   const { elapsedTime, currentLoadingPhrase } =
     useLoadingIndicator(streamingState);
   const showAutoAcceptIndicator = useAutoAcceptIndicator({ config });

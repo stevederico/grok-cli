@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.8] - 2026-02-26
+
+  Add conversation history
+  Add rich system prompt
+  Add agent profiles
+  Add /agent command
+  Fix /plan command
+  Add tool filtering per agent
+  Update provider message handling
+
 ## [0.3.7] - 2026-02-26
 
   Consolidate .grokcli to .grok-cli

@@ -16,6 +16,7 @@ import {
 import stripJsonComments from 'strip-json-comments';
 import { DefaultDark } from '../ui/themes/default.js';
 import { HooksSettings, mergeHooks } from '../hooks/hookRunner.js';
+import { AgentProfile } from '../core/agents/AgentProfile.js';
 
 export const SETTINGS_DIRECTORY_NAME = '.grok-cli';
 export const USER_SETTINGS_DIR = path.join(homedir(), SETTINGS_DIRECTORY_NAME);
@@ -63,6 +64,9 @@ export interface Settings {
 
   // Lifecycle hooks executed on session events.
   hooks?: HooksSettings;
+
+  /** Custom agent profiles for behavior switching. */
+  agents?: Record<string, AgentProfile>;
 
   // Add other settings here.
 }

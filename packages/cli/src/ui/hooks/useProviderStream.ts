@@ -20,6 +20,15 @@ import {
 import { getProvider } from '../../core/providers/registry.js';
 import { ToolCallResponse, StreamChunk } from '../../core/providers/index.js';
 import { PLAN_MODE_PROMPT } from '../../core/providers/systemPrompts.js';
+import { ConversationHistory } from '../../core/conversation/ConversationHistory.js';
+import { getCoreSystemPrompt } from '../../core/core/prompts.js';
+import {
+  AgentProfile,
+  BUILTIN_AGENTS,
+  resolveAgent,
+  filterToolsForAgent,
+  listAgentNames,
+} from '../../core/agents/AgentProfile.js';
 // Generic types for provider responses
 type Part = any;
 type PartListUnion = any;
@@ -110,6 +119,13 @@ export const useProviderStream = (
   const lastAssistantResponseRef = useRef<ToolCallResponse | null>(null);
   const toolCallRoundRef = useRef(0);
   const recentToolCallSignaturesRef = useRef<string[]>([]);
+
+  // Conversation history for multi-turn context
+  const conversationHistoryRef = useRef<ConversationHistory | null>(null);
+
+  // Active agent profile for behavior switching
+  const [activeAgentName, setActiveAgentName] = useState<string>('default');
+  const activeAgentRef = useRef<AgentProfile>(BUILTIN_AGENTS.default);
   const gitService = useMemo(() => {
     if (!config.getProjectRoot()) {
       return;
@@ -451,8 +467,8 @@ export const useProviderStream = (
 
       try {
         // Get provider configuration
-        const providerName = config.getProvider() || 
-          process.env.GROKCLI_PROVIDER || 
+        const providerName = config.getProvider() ||
+          process.env.GROKCLI_PROVIDER ||
           (process.env.XAI_API_KEY ? 'grok' : 'ollama');
         const model = config.getModel();
 
@@ -467,48 +483,60 @@ export const useProviderStream = (
           providerConfig.model = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
         }
 
+        // Lazy-init conversation history with the rich system prompt
+        if (!conversationHistoryRef.current) {
+          const agent = activeAgentRef.current;
+          const basePrompt = agent.systemPromptOverride || getCoreSystemPrompt(config.getUserMemory());
+          const systemPrompt = agent.systemPromptSuffix
+            ? `${basePrompt}\n\n${agent.systemPromptSuffix}`
+            : basePrompt;
+          conversationHistoryRef.current = new ConversationHistory(systemPrompt);
+        }
+
+        const conversationHistory = conversationHistoryRef.current;
+
+        // Track messages in conversation history
+        if (options?.isContinuation && toolResults && toolResults.length > 0) {
+          // Tool continuation: add tool results to history
+          conversationHistory.addToolResults(toolResults);
+          console.debug(`[DEBUG] Interactive UI - Added ${toolResults.length} tool results to conversation history`);
+        } else if (!options?.isContinuation && promptText.trim()) {
+          // Fresh user query: add user message to history
+          conversationHistory.addUserMessage(
+            planMode ? `${PLAN_MODE_PROMPT}\n\n${promptText}` : promptText
+          );
+          console.debug(`[DEBUG] Interactive UI - Added user message to conversation history`);
+        }
+
+        // Build query options using conversation history
+        const tokenBudget = parseInt(process.env.GROKCLI_CONTEXT_SIZE || '128000', 10);
         const queryOptions: any = {};
         if (model) {
           queryOptions.model = model;
         }
-        
-        // Add tool results if this is a continuation with tool responses
-        if (toolResults && toolResults.length > 0) {
-          queryOptions.tool_results = toolResults;
-          // Include the previous assistant response for proper conversation context
-          if (lastAssistantResponseRef.current) {
-            queryOptions.previous_assistant_response = lastAssistantResponseRef.current;
-          }
-          console.debug(`[DEBUG] Interactive UI - Including ${toolResults.length} tool results in query`);
-        }
-
-        console.debug(`[DEBUG] Interactive UI - ProviderConfig:`, providerConfig);
-        console.debug(`[DEBUG] Interactive UI - QueryOptions:`, queryOptions);
-        console.debug(`[DEBUG] Interactive UI - Prompt:`, promptText);
+        queryOptions.messages = conversationHistory.getMessages(tokenBudget);
+        console.debug(`[DEBUG] Interactive UI - Conversation history: ${conversationHistory.length} messages, sending ${queryOptions.messages.length} to provider`);
 
         // Get the tool registry and provider
-        console.debug(`[DEBUG] Interactive UI - Getting tool registry...`);
         const toolRegistry = await config.getToolRegistry();
-        const tools = toolRegistry.getFunctionDeclarations();
+        let tools = toolRegistry.getFunctionDeclarations();
         console.debug(`[DEBUG] Interactive UI - Tools available: ${tools.length}`);
-        
+
         const provider = getProvider(providerName, providerConfig);
-        
-        // In plan mode, prepend the plan prompt and skip tools
-        const effectivePrompt = planMode
-          ? `${PLAN_MODE_PROMPT}\n\n${promptText}`
-          : promptText;
+
+        // Apply agent profile tool filtering
+        const agent = activeAgentRef.current;
+        tools = filterToolsForAgent(tools, agent);
+
+        // In plan mode, skip tools entirely
         const effectiveTools = planMode ? [] : tools;
 
-        // Call the provider with streaming
-        console.debug(`[DEBUG] Interactive UI - Calling provider.queryWithToolsStreaming...`);
-        console.debug(`[DEBUG] Interactive UI - With tool results:`, toolResults?.length || 0);
-
+        // Call the provider with streaming (prompt is ignored when messages are present,
+        // but pass it for providers that don't support messages param)
         let streamedContent = '';
         const onChunk = (chunk: StreamChunk) => {
           if (chunk.type === 'content' && chunk.content) {
             streamedContent += chunk.content;
-            // Update pending assistant text for live display
             setPendingHistoryItem({
               type: 'assistant',
               text: streamedContent,
@@ -517,13 +545,12 @@ export const useProviderStream = (
         };
 
         const response: ToolCallResponse = await provider.queryWithToolsStreaming(
-          effectivePrompt || '',
+          promptText || '',
           effectiveTools,
           queryOptions,
           onChunk,
           abortControllerRef.current?.signal,
         );
-        // Clear pending item since we'll add final to history
         setPendingHistoryItem(null);
 
         // Report token usage to session stats
@@ -538,6 +565,12 @@ export const useProviderStream = (
         console.debug(`[DEBUG] Interactive UI - Response received:`, response.content?.substring(0, 100));
         console.debug(`[DEBUG] Interactive UI - Tool calls:`, response.tool_calls?.length || 0);
 
+        // Record assistant response in conversation history
+        conversationHistory.addAssistantMessage(
+          response.content || null,
+          response.tool_calls,
+        );
+
         // In plan mode, show plan text and stop (don't execute tools)
         if (planMode && response.content) {
           setPlanText(response.content);
@@ -549,16 +582,15 @@ export const useProviderStream = (
           return;
         }
 
-        // Store the response for potential tool result continuation
+        // Store the response for potential tool result continuation (legacy fallback)
         if (response.tool_calls && response.tool_calls.length > 0) {
           lastAssistantResponseRef.current = response;
         }
-        
+
         // Handle tool calls if present
         if (response.tool_calls && response.tool_calls.length > 0) {
           console.debug(`[DEBUG] Interactive UI - Processing ${response.tool_calls.length} tool calls...`);
-          
-          // Add assistant response first if there is any content
+
           if (response.content) {
             addItem(
               {
@@ -568,21 +600,18 @@ export const useProviderStream = (
               Date.now(),
             );
           }
-          
-          // Schedule tool calls
+
           const toolCallRequests: ToolCallRequestInfo[] = response.tool_calls.map(toolCall => {
-            // Handle arguments that might be objects or JSON strings
             let args: any;
             try {
-              args = typeof toolCall.function.arguments === 'string' 
+              args = typeof toolCall.function.arguments === 'string'
                 ? JSON.parse(toolCall.function.arguments)
                 : toolCall.function.arguments;
             } catch (error) {
               console.error(`[DEBUG] Interactive UI - Failed to parse tool arguments:`, error);
-              console.error(`[DEBUG] Interactive UI - Arguments:`, toolCall.function.arguments);
               args = {};
             }
-            
+
             return {
               toolName: toolCall.function.name,
               parameters: args,
@@ -591,18 +620,16 @@ export const useProviderStream = (
               args: args
             };
           });
-          
+
           // Duplicate tool call detection
           const roundSignature = toolCallRequests
             .map(t => `${t.toolName}:${JSON.stringify(t.parameters)}`)
             .sort()
             .join('|');
           recentToolCallSignaturesRef.current.push(roundSignature);
-          // Keep only the last MAX_DUPLICATE_TOOL_CALLS entries
           if (recentToolCallSignaturesRef.current.length > MAX_DUPLICATE_TOOL_CALLS) {
             recentToolCallSignaturesRef.current = recentToolCallSignaturesRef.current.slice(-MAX_DUPLICATE_TOOL_CALLS);
           }
-          // Check if the last N signatures are all identical
           if (
             recentToolCallSignaturesRef.current.length >= MAX_DUPLICATE_TOOL_CALLS &&
             recentToolCallSignaturesRef.current.every(sig => sig === roundSignature)
@@ -618,18 +645,20 @@ export const useProviderStream = (
             return;
           }
 
+          // Check agent's max tool rounds
+          const maxRounds = agent.maxToolRounds ?? MAX_TOOL_CALL_ROUNDS;
+          if (maxRounds === 0) {
+            // Agent disallows tool execution (e.g., planner)
+            setIsResponding(false);
+            return;
+          }
+
           console.debug(`[DEBUG] Interactive UI - Scheduling tool calls:`, toolCallRequests.map(t => t.toolName));
           setAgentPhase('executing_tools');
           scheduleToolCalls(toolCallRequests, abortControllerRef.current?.signal);
-          
+
         } else {
-          // No tool calls, just add the response
-          console.debug(`[DEBUG] Interactive UI - No tool calls, adding assistant response...`);
-          console.debug(`[DEBUG] Interactive UI - Is continuation: ${options?.isContinuation}`);
-          console.debug(`[DEBUG] Interactive UI - Response content: "${response.content?.substring(0, 200)}"`);
-          
           setAgentPhase('responding');
-          // Always add the response, even for continuations
           if (response.content) {
             addItem(
               {
@@ -641,8 +670,7 @@ export const useProviderStream = (
           } else if (options?.isContinuation) {
             console.warn(`[DEBUG] Interactive UI - Continuation response has no content!`);
           }
-          
-          // Clear last response since no tools were called
+
           lastAssistantResponseRef.current = null;
         }
         console.debug(`[DEBUG] Interactive UI - Added item to history`);
@@ -729,9 +757,17 @@ export const useProviderStream = (
       );
 
       if (newSuccessfulMemorySaves.length > 0) {
-        // Perform the refresh only if there are new ones.
-        void performMemoryRefresh();
-        // Mark them as processed so we don't do this again on the next render.
+        // Perform the refresh and update the system prompt in conversation history.
+        void performMemoryRefresh().then(() => {
+          if (conversationHistoryRef.current) {
+            const agent = activeAgentRef.current;
+            const basePrompt = agent.systemPromptOverride || getCoreSystemPrompt(config.getUserMemory());
+            const systemPrompt = agent.systemPromptSuffix
+              ? `${basePrompt}\n\n${agent.systemPromptSuffix}`
+              : basePrompt;
+            conversationHistoryRef.current.setSystemPrompt(systemPrompt);
+          }
+        });
         newSuccessfulMemorySaves.forEach((t) =>
           processedMemoryToolsRef.current.add(t.request.callId),
         );
@@ -920,9 +956,11 @@ export const useProviderStream = (
   const approvePlan = useCallback(() => {
     if (planOriginalPromptRef.current) {
       setPlanMode(false);
-      setPlanText(null);
       const prompt = planOriginalPromptRef.current;
       planOriginalPromptRef.current = null;
+      // The plan text is already in conversation history as an assistant message.
+      // Clear planText and re-submit the original prompt with tools enabled.
+      setPlanText(null);
       submitQuery(prompt);
     }
   }, [submitQuery]);
@@ -948,6 +986,47 @@ export const useProviderStream = (
     );
   }, [addItem]);
 
+  /**
+   * Switches the active agent profile and updates the system prompt.
+   * @param name The agent profile name to switch to.
+   * @param customAgents Optional user-defined agent profiles from settings.
+   */
+  const switchAgent = useCallback((name: string, customAgents?: Record<string, AgentProfile>) => {
+    const profile = resolveAgent(name, customAgents);
+    activeAgentRef.current = profile;
+    setActiveAgentName(name);
+
+    // Update conversation history system prompt for the new agent
+    if (conversationHistoryRef.current) {
+      const basePrompt = profile.systemPromptOverride || getCoreSystemPrompt(config.getUserMemory());
+      const systemPrompt = profile.systemPromptSuffix
+        ? `${basePrompt}\n\n${profile.systemPromptSuffix}`
+        : basePrompt;
+      conversationHistoryRef.current.setSystemPrompt(systemPrompt);
+    }
+  }, [config]);
+
+  /**
+   * Clears the conversation history, resetting multi-turn context.
+   */
+  const clearConversationHistory = useCallback(() => {
+    conversationHistoryRef.current?.clear();
+  }, []);
+
+  /**
+   * Refreshes the system prompt in conversation history (e.g., after memory update).
+   */
+  const refreshSystemPrompt = useCallback(() => {
+    if (conversationHistoryRef.current) {
+      const agent = activeAgentRef.current;
+      const basePrompt = agent.systemPromptOverride || getCoreSystemPrompt(config.getUserMemory());
+      const systemPrompt = agent.systemPromptSuffix
+        ? `${basePrompt}\n\n${agent.systemPromptSuffix}`
+        : basePrompt;
+      conversationHistoryRef.current.setSystemPrompt(systemPrompt);
+    }
+  }, [config]);
+
   return {
     streamingState,
     submitQuery,
@@ -962,5 +1041,9 @@ export const useProviderStream = (
     editPlan,
     setPlanMode,
     planOriginalPromptRef,
+    activeAgentName,
+    switchAgent,
+    clearConversationHistory,
+    refreshSystemPrompt,
   };
 };

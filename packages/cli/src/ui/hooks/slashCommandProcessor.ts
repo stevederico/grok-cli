@@ -39,6 +39,7 @@ import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
 import { formatDuration, formatMemoryUsage } from '../utils/formatters.js';
 import { getCliVersion } from '../../utils/version.js';
 import { LoadedSettings } from '../../config/settings.js';
+import { AgentProfile, listAgentNames } from '../../core/agents/AgentProfile.js';
 
 export interface SlashCommandActionReturn {
   shouldScheduleTool?: boolean;
@@ -85,6 +86,9 @@ export const useSlashCommandProcessor = (
   openModelDialog: () => void,
   openThemeDialog: () => void,
   openAuthDialog: () => void,
+  activeAgentName?: string,
+  switchAgent?: (name: string, customAgents?: Record<string, AgentProfile>) => void,
+  clearConversationHistory?: () => void,
 ) => {
   const session = useSessionStats();
   const gitService = useMemo(() => {
@@ -228,6 +232,7 @@ export const useSlashCommandProcessor = (
         action: async (_mainCommand, _subCommand, _args) => {
           onDebugMessage('Clearing terminal and resetting chat.');
           clearItems();
+          clearConversationHistory?.();
           await config?.getGrokClient()?.resetChat();
           console.clear();
           refreshStatic();
@@ -284,13 +289,50 @@ For more information, visit: https://github.com/stevederico/grok-cli`,
       {
         name: 'plan',
         description: 'plan changes before executing (e.g. /plan refactor auth)',
-        action: (_mainCommand, _subCommand, args) => {
-          const trimmedArgs = (args || '').trim();
+        action: (_mainCommand, _subCommand, _args) => {
           addMessage({
             type: MessageType.INFO,
-            content: trimmedArgs
-              ? `Plan mode: submit via the input prompt as "/plan ${trimmedArgs}"`
-              : 'Usage: /plan <description of task>',
+            content: 'Usage: /plan <description of task>\n\nExample: /plan refactor the auth module to use JWT\n\nThe AI will present a numbered plan for approval before making changes.',
+            timestamp: new Date(),
+          });
+        },
+      },
+      {
+        name: 'agent',
+        description: 'switch agent profile (e.g. /agent researcher)',
+        action: (_mainCommand, subCommand, _args) => {
+          if (!switchAgent) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: 'Agent switching not available.',
+              timestamp: new Date(),
+            });
+            return;
+          }
+
+          if (!subCommand) {
+            // List available agents with current marked
+            const customAgents = settings?.merged?.agents;
+            const names = listAgentNames(customAgents);
+            const lines = names.map((name) => {
+              const isCurrent = name === (activeAgentName || 'default');
+              const indicator = isCurrent ? '\u001b[32m● ' : '  ○ ';
+              const suffix = isCurrent ? ' (active)\u001b[0m' : '';
+              return `${indicator}${name}${suffix}`;
+            });
+            addMessage({
+              type: MessageType.INFO,
+              content: `Available agents:\n\n${lines.join('\n')}\n\nUsage: /agent <name>`,
+              timestamp: new Date(),
+            });
+            return;
+          }
+
+          const customAgents = settings?.merged?.agents;
+          switchAgent(subCommand, customAgents);
+          addMessage({
+            type: MessageType.INFO,
+            content: `Switched to agent: ${subCommand}`,
             timestamp: new Date(),
           });
         },

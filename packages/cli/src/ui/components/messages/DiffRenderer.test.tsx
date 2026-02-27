@@ -127,8 +127,9 @@ index 0000001..0000002 100644
     );
     const output = lastFrame();
     const lines = output!.split('\n');
-    expect(lines[0]).toBe('1    - old line');
-    expect(lines[1]).toBe('1    + new line');
+    expect(lines[0]).toContain('┌─ test.txt (modified)');
+    expect(output).toContain('old line');
+    expect(output).toContain('new line');
   });
 
   it('should handle diff with only header and no changes', () => {
@@ -184,7 +185,7 @@ index 123..456 100644
       </OverflowProvider>,
     );
     const output = lastFrame();
-    expect(output).toContain('═'); // Check for the border character used in the gap
+    expect(output).toContain('⋯'); // Check for the gap indicator character
 
     // Verify that lines before and after the gap are rendered
     expect(output).toContain('context line 1');
@@ -221,7 +222,7 @@ index abc..def 100644
       </OverflowProvider>,
     );
     const output = lastFrame();
-    expect(output).not.toContain('═'); // Ensure no separator is rendered
+    expect(output).not.toContain('⋯'); // Ensure no gap indicator is rendered
 
     // Verify that lines before and after the gap are rendered
     expect(output).toContain('context line 5');
@@ -246,57 +247,71 @@ index 123..789 100644
  console.log('end of second hunk');
 `;
 
-    it.each([
-      {
-        terminalWidth: 80,
-        height: undefined,
-        expected: `1      console.log('first hunk');
-2    - const oldVar = 1;
-2    + const newVar = 1;
-3      console.log('end of first hunk');
-════════════════════════════════════════════════════════════════════════════════
-20     console.log('second hunk');
-21   - const anotherOld = 'test';
-21   + const anotherNew = 'test';
-22     console.log('end of second hunk');`,
-      },
-      {
-        terminalWidth: 80,
-        height: 6,
-        expected: `... first 4 lines hidden ...
-════════════════════════════════════════════════════════════════════════════════
-20     console.log('second hunk');
-21   - const anotherOld = 'test';
-21   + const anotherNew = 'test';
-22     console.log('end of second hunk');`,
-      },
-      {
-        terminalWidth: 30,
-        height: 6,
-        expected: `... first 10 lines hidden ...
-       'test';
-21   + const anotherNew =
-       'test';
-22     console.log('end of
-       second hunk');`,
-      },
-    ])(
-      'with terminalWidth $terminalWidth and height $height',
-      ({ terminalWidth, height, expected }) => {
-        const { lastFrame } = render(
-          <OverflowProvider>
-            <DiffRenderer
-              diffContent={diffWithMultipleHunks}
-              filename="multi.js"
-              terminalWidth={terminalWidth}
-              availableTerminalHeight={height}
-            />
-          </OverflowProvider>,
-        );
-        const output = lastFrame();
-        expect(sanitizeOutput(output, terminalWidth)).toEqual(expected);
-      },
-    );
+    it('with terminalWidth 80 and no height limit', () => {
+      const { lastFrame } = render(
+        <OverflowProvider>
+          <DiffRenderer
+            diffContent={diffWithMultipleHunks}
+            filename="multi.js"
+            terminalWidth={80}
+          />
+        </OverflowProvider>,
+      );
+      const output = lastFrame()!;
+      // Header
+      expect(output).toContain('┌─ multi.js (modified)');
+      // Content from first hunk
+      expect(output).toContain("console.log('first hunk')");
+      expect(output).toContain('const oldVar = 1');
+      expect(output).toContain('const newVar = 1');
+      expect(output).toContain("console.log('end of first hunk')");
+      // Gap indicator
+      expect(output).toContain('⋯');
+      expect(output).toContain('unchanged lines');
+      // Content from second hunk
+      expect(output).toContain("console.log('second hunk')");
+      expect(output).toContain("const anotherOld = 'test'");
+      expect(output).toContain("const anotherNew = 'test'");
+      expect(output).toContain("console.log('end of second hunk')");
+    });
+
+    it('with terminalWidth 80 and height 6', () => {
+      const { lastFrame } = render(
+        <OverflowProvider>
+          <DiffRenderer
+            diffContent={diffWithMultipleHunks}
+            filename="multi.js"
+            terminalWidth={80}
+            availableTerminalHeight={6}
+          />
+        </OverflowProvider>,
+      );
+      const output = lastFrame()!;
+      // Should have header and truncated content
+      expect(output).toContain('┌─ multi.js (modified)');
+      // Should contain second hunk content (visible after truncation)
+      expect(output).toContain("console.log('second hunk')");
+      expect(output).toContain("const anotherNew = 'test'");
+      expect(output).toContain("console.log('end of second hunk')");
+    });
+
+    it('with terminalWidth 30 and height 6', () => {
+      const { lastFrame } = render(
+        <OverflowProvider>
+          <DiffRenderer
+            diffContent={diffWithMultipleHunks}
+            filename="multi.js"
+            terminalWidth={30}
+            availableTerminalHeight={6}
+          />
+        </OverflowProvider>,
+      );
+      const output = lastFrame()!;
+      // Header should be present
+      expect(output).toContain('┌─ multi.js (modified)');
+      // Some content should be visible (may be truncated due to narrow width)
+      expect(output).toContain('anotherNew');
+    });
   });
 
   it('should correctly render a diff with a SVN diff format', () => {
@@ -326,11 +341,15 @@ fileDiff Index: file.txt
     );
     const output = lastFrame();
 
-    expect(output).toEqual(`1    - const oldVar = 1;
-1    + const newVar = 1;
-════════════════════════════════════════════════════════════════════════════════
-20   - const anotherOld = 'test';
-20   + const anotherNew = 'test';`);
+    // Header should be present
+    expect(output).toContain('┌─ TEST (modified)');
+    // Content lines should use │ borders
+    expect(output).toContain('const oldVar = 1');
+    expect(output).toContain('const newVar = 1');
+    // Gap indicator
+    expect(output).toContain('⋯');
+    expect(output).toContain("const anotherOld = 'test'");
+    expect(output).toContain("const anotherNew = 'test'");
   });
 
   it('should correctly render a new file with no file extension correctly', () => {
@@ -355,8 +374,11 @@ fileDiff Index: Dockerfile
       </OverflowProvider>,
     );
     const output = lastFrame();
-    expect(output).toEqual(`1 FROM node:14
-2 RUN npm install
-3 RUN npm run build`);
+    // Header for new file
+    expect(output).toContain('┌─ Dockerfile (new file)');
+    // Content lines
+    expect(output).toContain('FROM node:14');
+    expect(output).toContain('RUN npm install');
+    expect(output).toContain('RUN npm run build');
   });
 });

@@ -239,7 +239,7 @@ describe('retryWithBackoff', () => {
   });
 
   describe('Flash model fallback for OAuth users', () => {
-    it('should trigger fallback for OAuth personal users after persistent 429 errors', async () => {
+    it('should trigger fallback for API key users after persistent 429 errors', async () => {
       const fallbackCallback = vi.fn().mockResolvedValue('grok-2.5-flash');
 
       let fallbackOccurred = false;
@@ -259,7 +259,7 @@ describe('retryWithBackoff', () => {
           fallbackOccurred = true;
           return await fallbackCallback(authType);
         },
-        authType: 'oauth-personal',
+        authType: 'api_key',
       });
 
       // Advance all timers to complete retries
@@ -269,13 +269,13 @@ describe('retryWithBackoff', () => {
       await expect(promise).resolves.toBe('success');
 
       // Verify callback was called with correct auth type
-      expect(fallbackCallback).toHaveBeenCalledWith('oauth-personal');
+      expect(fallbackCallback).toHaveBeenCalledWith('api_key');
 
       // Should retry again after fallback
       expect(mockFn).toHaveBeenCalledTimes(3); // 2 initial attempts + 1 after fallback
     });
 
-    it('should NOT trigger fallback for API key users', async () => {
+    it('should NOT trigger fallback for local users', async () => {
       const fallbackCallback = vi.fn();
 
       const mockFn = vi.fn(async () => {
@@ -288,7 +288,7 @@ describe('retryWithBackoff', () => {
         maxAttempts: 3,
         initialDelayMs: 100,
         onPersistent429: fallbackCallback,
-        authType: 'grok-api-key',
+        authType: 'local',
       });
 
       // Handle the promise properly to avoid unhandled rejections
@@ -300,7 +300,7 @@ describe('retryWithBackoff', () => {
       expect(result).toBeInstanceOf(Error);
       expect(result.message).toBe('Rate limit exceeded');
 
-      // Callback should not be called for API key users
+      // Callback should not be called for local users
       expect(fallbackCallback).not.toHaveBeenCalled();
     });
 
@@ -324,7 +324,7 @@ describe('retryWithBackoff', () => {
         maxAttempts: 3,
         initialDelayMs: 100,
         onPersistent429: fallbackCallback,
-        authType: 'oauth-personal',
+        authType: 'api_key',
       });
 
       await vi.runAllTimersAsync();
@@ -346,7 +346,7 @@ describe('retryWithBackoff', () => {
         maxAttempts: 3,
         initialDelayMs: 100,
         onPersistent429: fallbackCallback,
-        authType: 'oauth-personal',
+        authType: 'api_key',
       });
 
       // Handle the promise properly to avoid unhandled rejections
@@ -357,7 +357,7 @@ describe('retryWithBackoff', () => {
       // Should fail with original error when fallback is rejected
       expect(result).toBeInstanceOf(Error);
       expect(result.message).toBe('Rate limit exceeded');
-      expect(fallbackCallback).toHaveBeenCalledWith('oauth-personal');
+      expect(fallbackCallback).toHaveBeenCalledWith('api_key');
     });
 
     it('should handle mixed error types (only count consecutive 429s)', async () => {
@@ -390,7 +390,7 @@ describe('retryWithBackoff', () => {
           fallbackOccurred = true;
           return await fallbackCallback(authType);
         },
-        authType: 'oauth-personal',
+        authType: 'api_key',
       });
 
       await vi.runAllTimersAsync();
@@ -398,7 +398,7 @@ describe('retryWithBackoff', () => {
       await expect(promise).resolves.toBe('success');
 
       // Should trigger fallback after 2 consecutive 429s (attempts 2-3)
-      expect(fallbackCallback).toHaveBeenCalledWith('oauth-personal');
+      expect(fallbackCallback).toHaveBeenCalledWith('api_key');
     });
   });
 });

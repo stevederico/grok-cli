@@ -29,15 +29,15 @@ vi.mock('read-package-up', () => ({
   ),
 }));
 
-vi.mock('@grok-cli/core', async () => {
+vi.mock('../core/index.js', async () => {
   const actualServer = await vi.importActual<typeof ServerConfig>(
-    '@grok-cli/core',
+    '../core/index.js',
   );
   return {
     ...actualServer,
     loadEnvironment: vi.fn(),
     loadServerHierarchicalMemory: vi.fn(
-      (cwd, debug, fileService, extensionPaths) =>
+      (cwd: string, debug: boolean, fileService: unknown, extensionPaths?: string[]) =>
         Promise.resolve({
           memoryContent: extensionPaths?.join(',') || '',
           fileCount: extensionPaths?.length || 0,

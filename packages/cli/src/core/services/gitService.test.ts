@@ -12,6 +12,7 @@ import type { ChildProcess } from 'node:child_process';
 
 const hoistedMockExec = vi.hoisted(() => vi.fn());
 vi.mock('node:child_process', () => ({
+  default: { exec: hoistedMockExec },
   exec: hoistedMockExec,
 }));
 
@@ -194,7 +195,7 @@ describe('GitService', () => {
       const service = new GitService(mockProjectRoot);
       await service.setupShadowGitRepository();
       const expectedConfigContent =
-        '[user]\n  name = GrokCLI\n  email = grok-cli@example.com\n[commit]\n  gpgsign = false\n';
+        '[user]\n  name = Grok CLI\n[commit]\n  gpgsign = false\n';
       expect(hoistedMockWriteFile).toHaveBeenCalledWith(
         gitConfigPath,
         expectedConfigContent,

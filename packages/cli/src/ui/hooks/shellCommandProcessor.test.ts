@@ -7,7 +7,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { vi } from 'vitest';
 import { useShellCommandProcessor } from './shellCommandProcessor';
-import { Config, GrokClient } from '../../core/index.js';
+import { Config } from '../../core/index.js';
 import * as fs from 'fs';
 import EventEmitter from 'events';
 
@@ -34,7 +34,6 @@ describe('useShellCommandProcessor', () => {
   let onExecMock: vi.Mock;
   let onDebugMessageMock: vi.Mock;
   let configMock: Config;
-  let grokClientMock: GrokClient;
 
   beforeEach(async () => {
     const { spawn } = await import('child_process');
@@ -55,10 +54,6 @@ describe('useShellCommandProcessor', () => {
     configMock = {
       getTargetDir: () => '/test/dir',
     } as unknown as Config;
-
-    grokClientMock = {
-      addHistory: vi.fn(),
-    } as unknown as GrokClient;
   });
 
   afterEach(() => {
@@ -73,7 +68,6 @@ describe('useShellCommandProcessor', () => {
         onExecMock,
         onDebugMessageMock,
         configMock,
-        grokClientMock,
       ),
     );
 
@@ -107,7 +101,6 @@ describe('useShellCommandProcessor', () => {
       type: 'info',
       text: 'file1.txt\nfile2.txt',
     });
-    expect(grokClientMock.addHistory).toHaveBeenCalledTimes(1);
   });
 
   it('should handle binary output', async () => {

@@ -25,9 +25,9 @@ import { useInput, type Key as InkKey } from 'ink';
 
 vi.mock('ink');
 
-vi.mock('@grok-cli/core', async () => {
+vi.mock('../../core/index.js', async () => {
   const actualServerModule = (await vi.importActual(
-    '@grok-cli/core',
+    '../../core/index.js',
   )) as Record<string, unknown>;
   return {
     ...actualServerModule,
@@ -153,7 +153,7 @@ describe('useAutoAcceptIndicator', () => {
     expect(mockConfigInstance.getApprovalMode).toHaveBeenCalledTimes(1);
   });
 
-  it('should toggle the indicator and update config when Shift+Tab or Ctrl+Y is pressed', () => {
+  it('should toggle the indicator and update config when Shift+Tab is pressed', () => {
     mockConfigInstance.getApprovalMode.mockReturnValue(ApprovalMode.DEFAULT);
     const { result } = renderHook(() =>
       useAutoAcceptIndicator({
@@ -162,6 +162,7 @@ describe('useAutoAcceptIndicator', () => {
     );
     expect(result.current).toBe(ApprovalMode.DEFAULT);
 
+    // DEFAULT → AUTO_EDIT
     act(() => {
       capturedUseInputHandler('', { tab: true, shift: true } as InkKey);
     });
@@ -170,38 +171,16 @@ describe('useAutoAcceptIndicator', () => {
     );
     expect(result.current).toBe(ApprovalMode.AUTO_EDIT);
 
-    act(() => {
-      capturedUseInputHandler('y', { ctrl: true } as InkKey);
-    });
-    expect(mockConfigInstance.setApprovalMode).toHaveBeenCalledWith(
-      ApprovalMode.YOLO,
-    );
-    expect(result.current).toBe(ApprovalMode.YOLO);
-
-    act(() => {
-      capturedUseInputHandler('y', { ctrl: true } as InkKey);
-    });
-    expect(mockConfigInstance.setApprovalMode).toHaveBeenCalledWith(
-      ApprovalMode.DEFAULT,
-    );
-    expect(result.current).toBe(ApprovalMode.DEFAULT);
-
-    act(() => {
-      capturedUseInputHandler('y', { ctrl: true } as InkKey);
-    });
-    expect(mockConfigInstance.setApprovalMode).toHaveBeenCalledWith(
-      ApprovalMode.YOLO,
-    );
-    expect(result.current).toBe(ApprovalMode.YOLO);
-
+    // AUTO_EDIT → YOLO
     act(() => {
       capturedUseInputHandler('', { tab: true, shift: true } as InkKey);
     });
     expect(mockConfigInstance.setApprovalMode).toHaveBeenCalledWith(
-      ApprovalMode.AUTO_EDIT,
+      ApprovalMode.YOLO,
     );
-    expect(result.current).toBe(ApprovalMode.AUTO_EDIT);
+    expect(result.current).toBe(ApprovalMode.YOLO);
 
+    // YOLO → DEFAULT
     act(() => {
       capturedUseInputHandler('', { tab: true, shift: true } as InkKey);
     });

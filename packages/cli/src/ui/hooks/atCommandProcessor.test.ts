@@ -52,8 +52,8 @@ vi.mock('fs/promises', async () => {
   };
 });
 
-vi.mock('@grok-cli/core', async () => {
-  const actual = await vi.importActual('@grok-cli/core');
+vi.mock('../../core/index.js', async () => {
+  const actual = await vi.importActual('../../core/index.js');
   return {
     ...actual,
     FileDiscoveryService: vi.fn(),

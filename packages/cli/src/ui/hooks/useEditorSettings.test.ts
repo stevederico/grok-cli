@@ -24,8 +24,8 @@ import {
   allowEditorTypeInSandbox,
 } from '../../core/index.js';
 
-vi.mock('@grok-cli/core', async () => {
-  const actual = await vi.importActual('@grok-cli/core');
+vi.mock('../../core/index.js', async () => {
+  const actual = await vi.importActual('../../core/index.js');
   return {
     ...actual,
     checkHasEditorType: vi.fn(() => true),

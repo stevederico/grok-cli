@@ -313,14 +313,11 @@ describe('EditTool', () => {
       );
     });
 
-    it('should use corrected params from ensureCorrectEdit for diff generation', async () => {
+    it('should use original params directly for diff generation (edit correction disabled)', async () => {
       const originalContent = 'This is the original string to be replaced.';
       const originalOldString = 'original string';
       const originalNewString = 'new string';
-
-      const correctedOldString = 'original string to be replaced'; // More specific
-      const correctedNewString = 'completely new string'; // Different replacement
-      const expectedFinalContent = 'This is the completely new string.';
+      const expectedFinalContent = 'This is the new string to be replaced.';
 
       fs.writeFileSync(filePath, originalContent);
       const params: EditToolParams = {
@@ -329,48 +326,27 @@ describe('EditTool', () => {
         new_string: originalNewString,
       };
 
-      // The main beforeEach already calls mockEnsureCorrectEdit.mockReset()
-      // Set a specific mock for this test case
-      let mockCalled = false;
-      mockEnsureCorrectEdit.mockImplementationOnce(
-        async (content, p, client) => {
-          mockCalled = true;
-          expect(content).toBe(originalContent);
-          expect(p).toBe(params);
-          expect(client).toBe((tool as any).client);
-          return {
-            params: {
-              file_path: filePath,
-              old_string: correctedOldString,
-              new_string: correctedNewString,
-            },
-            occurrences: 1,
-          };
-        },
-      );
-
       const confirmation = (await tool.shouldConfirmExecute(
         params,
         new AbortController().signal,
       )) as FileDiff;
 
-      expect(mockCalled).toBe(true); // Check if the mock implementation was run
-      // expect(mockEnsureCorrectEdit).toHaveBeenCalledWith(originalContent, params, expect.anything()); // Keep this commented for now
+      // ensureCorrectEdit is no longer called (edit correction disabled)
+      expect(mockEnsureCorrectEdit).not.toHaveBeenCalled();
       expect(confirmation).toEqual(
         expect.objectContaining({
           title: `Confirm Edit: ${testFile}`,
           fileName: testFile,
         }),
       );
-      // Check that the diff is based on the corrected strings leading to the new state
+      // Check that the diff is based on the original params
       expect(confirmation.fileDiff).toContain(`-${originalContent}`);
       expect(confirmation.fileDiff).toContain(`+${expectedFinalContent}`);
 
-      // Verify that applying the correctedOldString and correctedNewString to originalContent
-      // indeed produces the expectedFinalContent, which is what the diff should reflect.
+      // Verify that applying the original old/new strings produces expected content
       const patchedContent = originalContent.replace(
-        correctedOldString, // This was the string identified by ensureCorrectEdit for replacement
-        correctedNewString, // This was the string identified by ensureCorrectEdit as the replacement
+        originalOldString,
+        originalNewString,
       );
       expect(patchedContent).toBe(expectedFinalContent);
     });

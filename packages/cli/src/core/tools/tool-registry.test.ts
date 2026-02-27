@@ -33,19 +33,22 @@ import { execSync } from 'node:child_process';
 
 // Use vi.hoisted to define the mock function so it can be used in the vi.mock factory
 const mockDiscoverMcpTools = vi.hoisted(() => vi.fn());
+const mockExecSyncFn = vi.hoisted(() => vi.fn());
 
 // Mock ./mcp-client.js to control its behavior within tool-registry tests
 vi.mock('./mcp-client.js', () => ({
   discoverMcpTools: mockDiscoverMcpTools,
 }));
 
-// Mock node:child_process
-vi.mock('node:child_process', async () => {
-  const actual = await vi.importActual('node:child_process');
+// Mock child_process to prevent real command execution
+vi.mock('node:child_process', () => {
   return {
-    ...actual,
-    execSync: vi.fn(),
+    execSync: mockExecSyncFn,
     spawn: vi.fn(),
+    default: {
+      execSync: mockExecSyncFn,
+      spawn: vi.fn(),
+    },
   };
 });
 
@@ -227,8 +230,6 @@ describe('ToolRegistry', () => {
     let mockConfigGetToolDiscoveryCommand: ReturnType<typeof vi.spyOn>;
     let mockConfigGetMcpServers: ReturnType<typeof vi.spyOn>;
     let mockConfigGetMcpServerCommand: ReturnType<typeof vi.spyOn>;
-    let mockExecSync: ReturnType<typeof vi.mocked<typeof execSync>>;
-
     beforeEach(() => {
       mockConfigGetToolDiscoveryCommand = vi.spyOn(
         config,
@@ -236,7 +237,7 @@ describe('ToolRegistry', () => {
       );
       mockConfigGetMcpServers = vi.spyOn(config, 'getMcpServers');
       mockConfigGetMcpServerCommand = vi.spyOn(config, 'getMcpServerCommand');
-      mockExecSync = vi.mocked(execSync);
+      mockExecSyncFn.mockReset();
       toolRegistry = new ToolRegistry(config); // Reset registry
       // Reset the mock for discoverMcpTools before each test in this suite
       mockDiscoverMcpTools.mockReset().mockResolvedValue(undefined);
@@ -253,13 +254,13 @@ describe('ToolRegistry', () => {
           parameters: { type: Type.OBJECT, properties: {} },
         },
       ];
-      mockExecSync.mockReturnValue(
+      mockExecSyncFn.mockReturnValue(
         Buffer.from(
           JSON.stringify([{ function_declarations: mockToolDeclarations }]),
         ),
       );
       await toolRegistry.discoverTools();
-      expect(execSync).toHaveBeenCalledWith(discoveryCommand);
+      expect(mockExecSyncFn).toHaveBeenCalledWith(discoveryCommand);
       const discoveredTool = toolRegistry.getTool('discovered-tool-1');
       expect(discoveredTool).toBeInstanceOf(DiscoveredTool);
     });

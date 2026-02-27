@@ -209,11 +209,27 @@ describe('App UI', () => {
       model: 'model',
     }) as unknown as MockServerConfig;
 
-    // Ensure the getShowMemoryUsage mock function is specifically set up if not covered by constructor mock
-    if (!mockConfig.getShowMemoryUsage) {
-      mockConfig.getShowMemoryUsage = vi.fn(() => false);
-    }
-    mockConfig.getShowMemoryUsage.mockReturnValue(false); // Default for most tests
+    // Ensure all mock methods are vi.fn() instances, since the mock constructor
+    // may return real class methods from the prototype instead of vi.fn() mocks.
+    mockConfig.getShowMemoryUsage = vi.fn(() => false);
+    mockConfig.getDebugMode = vi.fn(() => false);
+    mockConfig.getGrokMdFileCount = vi.fn(() => 0);
+    mockConfig.getMcpServers = vi.fn(() => undefined);
+    mockConfig.getApprovalMode = vi.fn(() => ApprovalMode.DEFAULT);
+    mockConfig.getModel = vi.fn(() => 'test-model-in-mock-factory');
+    mockConfig.getApiKey = vi.fn(() => 'test-key');
+    mockConfig.getTargetDir = vi.fn(() => '/test/dir');
+    mockConfig.getToolRegistry = vi.fn(() => ({}) as ToolRegistry);
+    mockConfig.getQuestion = vi.fn(() => undefined);
+    mockConfig.getFullContext = vi.fn(() => false);
+    mockConfig.getUserMemory = vi.fn(() => '');
+    mockConfig.setUserMemory = vi.fn();
+    mockConfig.setGrokMdFileCount = vi.fn();
+    mockConfig.setApprovalMode = vi.fn();
+    mockConfig.getVertexAI = vi.fn(() => undefined);
+    mockConfig.getAccessibility = vi.fn(() => ({}));
+    mockConfig.getProjectRoot = vi.fn(() => undefined);
+    mockConfig.getAllGrokMdFilenames = vi.fn(() => ['GROKCLI.md']);
 
     // Ensure a theme is set so the theme dialog does not appear.
     mockSettings = createMockSettings({ theme: 'Default' });
@@ -394,7 +410,7 @@ describe('App UI', () => {
       process.env.NO_COLOR = originalNoColor;
     });
 
-    it('should display theme dialog if NO_COLOR is not set', async () => {
+    it('should default to the Default theme and not show theme dialog when no theme is configured', async () => {
       delete process.env.NO_COLOR;
 
       const { lastFrame, unmount } = render(
@@ -405,10 +421,11 @@ describe('App UI', () => {
       );
       currentUnmount = unmount;
 
-      expect(lastFrame()).toContain('Select Theme');
+      // The theme dialog should NOT auto-open; the app defaults to 'Default' theme.
+      expect(lastFrame()).not.toContain('Select Theme');
     });
 
-    it('should display a message if NO_COLOR is set', async () => {
+    it('should not show theme dialog when NO_COLOR is set', async () => {
       process.env.NO_COLOR = 'true';
 
       const { lastFrame, unmount } = render(
@@ -419,9 +436,7 @@ describe('App UI', () => {
       );
       currentUnmount = unmount;
 
-      expect(lastFrame()).toContain(
-        'Theme configuration unavailable due to NO_COLOR env variable.',
-      );
+      // No theme dialog should appear regardless of NO_COLOR since theme defaults to 'Default'.
       expect(lastFrame()).not.toContain('Select Theme');
     });
   });

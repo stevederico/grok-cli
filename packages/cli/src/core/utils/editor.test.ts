@@ -23,9 +23,12 @@ import {
 } from './editor.js';
 import { execSync, spawn } from 'child_process';
 
+const hoistedExecSync = vi.hoisted(() => vi.fn());
+const hoistedSpawn = vi.hoisted(() => vi.fn());
 vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-  spawn: vi.fn(),
+  default: { execSync: hoistedExecSync, spawn: hoistedSpawn },
+  execSync: hoistedExecSync,
+  spawn: hoistedSpawn,
 }));
 
 const originalPlatform = process.platform;

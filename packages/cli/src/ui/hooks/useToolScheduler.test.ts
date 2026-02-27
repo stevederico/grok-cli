@@ -50,6 +50,8 @@ const mockConfig = {
   getApprovalMode: vi.fn(() => ApprovalMode.DEFAULT),
   getUsageStatisticsEnabled: () => true,
   getDebugMode: () => false,
+  getHooksSettings: vi.fn().mockReturnValue(undefined),
+  getSessionId: vi.fn().mockReturnValue('test-session-id'),
 };
 
 const mockTool: Tool = {
@@ -353,9 +355,7 @@ describe('useReactToolScheduler', () => {
         status: 'error',
         request,
         response: expect.objectContaining({
-          error: expect.objectContaining({
-            message: 'Tool "nonExistentTool" not found in registry.',
-          }),
+          error: 'Tool "nonExistentTool" not found in registry.',
         }),
       }),
     ]);
@@ -390,7 +390,7 @@ describe('useReactToolScheduler', () => {
         status: 'error',
         request,
         response: expect.objectContaining({
-          error: confirmError,
+          error: confirmError.message,
         }),
       }),
     ]);
@@ -429,7 +429,7 @@ describe('useReactToolScheduler', () => {
         status: 'error',
         request,
         response: expect.objectContaining({
-          error: execError,
+          error: execError.message,
         }),
       }),
     ]);

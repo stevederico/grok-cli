@@ -18,28 +18,18 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { Content } from '../__stubs__/types.js';
 
-import crypto from 'node:crypto';
 import os from 'node:os';
 
-const GROK_DIR_NAME = '.grok-cli';
-const TMP_DIR_NAME = 'tmp';
 const LOG_FILE_NAME = 'logs.json';
 const CHECKPOINT_FILE_NAME = 'checkpoint.json';
 
-const projectDir = process.cwd();
-const hash = crypto.createHash('sha256').update(projectDir).digest('hex');
-const TEST_GROK_DIR = path.join(
-  os.homedir(),
-  GROK_DIR_NAME,
-  TMP_DIR_NAME,
-  hash,
-);
-
-const TEST_LOG_FILE_PATH = path.join(TEST_GROK_DIR, LOG_FILE_NAME);
-const TEST_CHECKPOINT_FILE_PATH = path.join(
-  TEST_GROK_DIR,
-  CHECKPOINT_FILE_NAME,
-);
+/**
+ * Module-level variable holding the temp directory for the current test.
+ * Set in beforeEach, read by the mocked getProjectTempDir and helper functions.
+ */
+let TEST_GROK_DIR = '';
+let TEST_LOG_FILE_PATH = '';
+let TEST_CHECKPOINT_FILE_PATH = '';
 
 async function cleanupLogAndCheckpointFiles() {
   try {
@@ -65,6 +55,10 @@ vi.mock('../utils/session.js', () => ({
   sessionId: 'test-session-id',
 }));
 
+vi.mock('../utils/paths.js', () => ({
+  getProjectTempDir: () => TEST_GROK_DIR,
+}));
+
 describe('Logger', () => {
   let logger: Logger;
   const testSessionId = 'test-session-id';
@@ -73,10 +67,12 @@ describe('Logger', () => {
     vi.resetAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-01-01T12:00:00.000Z'));
-    // Clean up before the test
-    await cleanupLogAndCheckpointFiles();
-    // Ensure the directory exists for the test
-    await fs.mkdir(TEST_GROK_DIR, { recursive: true });
+
+    // Create a unique temp directory for each test to avoid sandbox restrictions
+    TEST_GROK_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'grok-logger-test-'));
+    TEST_LOG_FILE_PATH = path.join(TEST_GROK_DIR, LOG_FILE_NAME);
+    TEST_CHECKPOINT_FILE_PATH = path.join(TEST_GROK_DIR, CHECKPOINT_FILE_NAME);
+
     logger = new Logger(testSessionId);
     await logger.initialize();
   });

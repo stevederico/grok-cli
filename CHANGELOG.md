@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.9] - 2026-02-26
+
+  Add vitest workspace config
+  Fix 32 failing test files
+  Update snapshot assertions
+  Fix mock default exports
+  Fix logger test sandboxing
+  Update stale test assertions
+
 ## [0.3.8] - 2026-02-26
 
   Add conversation history

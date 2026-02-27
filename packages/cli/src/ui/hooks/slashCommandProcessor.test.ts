@@ -77,6 +77,8 @@ import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
 
 vi.mock('../contexts/SessionContext.js', () => ({
   useSessionStats: vi.fn(),
+  calculateCost: vi.fn().mockReturnValue(0),
+  MODEL_PRICING: {},
 }));
 
 vi.mock('./useShowMemoryCommand.js', () => ({
@@ -86,6 +88,11 @@ vi.mock('./useShowMemoryCommand.js', () => ({
 
 vi.mock('open', () => ({
   default: vi.fn(),
+}));
+
+const mockListAgentNames = vi.fn(() => ['default', 'planner', 'researcher', 'coder']);
+vi.mock('../../core/agents/AgentProfile.js', () => ({
+  listAgentNames: (...args: unknown[]) => mockListAgentNames(...args),
 }));
 
 describe('useSlashCommandProcessor', () => {
@@ -129,6 +136,8 @@ describe('useSlashCommandProcessor', () => {
       getProjectRoot: vi.fn(() => '/test/dir'),
       getCheckpointingEnabled: vi.fn(() => true),
       getBugCommand: vi.fn(() => undefined),
+      getHooksSettings: vi.fn(() => undefined),
+      getSessionId: vi.fn(() => 'test-session-id'),
     } as unknown as Config;
     mockCorgiMode = vi.fn();
     mockUseSessionStats.mockReturnValue({
@@ -150,6 +159,8 @@ describe('useSlashCommandProcessor', () => {
     mockProcessExit.mockClear();
     (ShowMemoryCommandModule.createShowMemoryAction as Mock).mockClear();
     mockPerformMemoryRefresh.mockClear();
+    mockListAgentNames.mockClear();
+    mockListAgentNames.mockReturnValue(['default', 'planner', 'researcher', 'coder']);
     process.env = { ...globalThis.process.env };
   });
 
@@ -488,7 +499,7 @@ describe('useSlashCommandProcessor', () => {
       const osVersion = 'test-platform test-node-version';
       let sandboxEnvStr = 'no sandbox';
       if (sandboxEnvVar && sandboxEnvVar !== 'sandbox-exec') {
-        sandboxEnvStr = sandboxEnvVar.replace(/^grok-(?:code-)?/, '');
+        sandboxEnvStr = sandboxEnvVar.replace(/^grokcli-(?:code-)?/, '');
       } else if (sandboxEnvVar === 'sandbox-exec') {
         sandboxEnvStr = `sandbox-exec (${seatbeltProfileVar || 'unknown'})`;
       }
@@ -603,6 +614,7 @@ describe('useSlashCommandProcessor', () => {
           {
             type: 'quit',
             stats: expect.any(Object),
+            sessionCost: expect.any(Number),
             duration: '1h 2m 3s',
             id: expect.any(Number),
           },
@@ -775,8 +787,9 @@ describe('useSlashCommandProcessor', () => {
 
   describe('/mcp command', () => {
     beforeEach(() => {
-      // Mock the core module with getMCPServerStatus and getMCPDiscoveryState
-      vi.mock('@grok-cli/core', async (importOriginal) => {
+      // Mock the core module with getMCPServerStatus and getMCPDiscoveryState.
+      // Must use the same path as the import (../../core/index.js) so vitest resolves them identically.
+      vi.mock('../../core/index.js', async (importOriginal) => {
         const actual = await importOriginal();
         return {
           ...(actual as Record<string, unknown>),
@@ -1155,6 +1168,174 @@ describe('useSlashCommandProcessor', () => {
         '🔄 \u001b[1mserver2\u001b[0m - Starting... (first startup may take longer) (tools will appear when ready)',
       );
 
+      expect(commandResult).toBe(true);
+    });
+  });
+
+  describe('/agent command', () => {
+    const getAgentProcessorHook = (
+      activeAgentName?: string,
+      switchAgent?: ReturnType<typeof vi.fn>,
+      clearConversationHistory?: ReturnType<typeof vi.fn>,
+    ) => {
+      const settings = {
+        merged: {
+          contextFileName: 'GROKCLI.md',
+        },
+      } as LoadedSettings;
+      return renderHook(() =>
+        useSlashCommandProcessor(
+          mockConfig,
+          settings,
+          [],
+          mockAddItem,
+          mockClearItems,
+          mockLoadHistory,
+          mockRefreshStatic,
+          mockSetShowHelp,
+          mockOnDebugMessage,
+          mockOpenEditorDialog,
+          mockPerformMemoryRefresh,
+          mockCorgiMode,
+          false,
+          mockSetQuittingMessages,
+          vi.fn(), // openPrivacyNotice
+          vi.fn(), // openProviderDialog
+          mockOpenModelDialog,
+          vi.fn(), // openThemeDialog
+          vi.fn(), // openAuthDialog
+          activeAgentName,
+          switchAgent,
+          clearConversationHistory,
+        ),
+      );
+    };
+
+    it('should list available agents when no args provided', async () => {
+      const mockSwitchAgent = vi.fn();
+      const { result } = getAgentProcessorHook(undefined, mockSwitchAgent);
+      let commandResult: SlashCommandActionReturn | boolean = false;
+      await act(async () => {
+        commandResult = await result.current.handleSlashCommand('/agent');
+      });
+
+      expect(mockAddItem).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          type: MessageType.INFO,
+          text: expect.stringContaining('Available agents'),
+        }),
+        expect.any(Number),
+      );
+      expect(mockSwitchAgent).not.toHaveBeenCalled();
+      expect(commandResult).toBe(true);
+    });
+
+    it('should call switchAgent with the specified agent name', async () => {
+      const mockSwitchAgent = vi.fn();
+      const { result } = getAgentProcessorHook('default', mockSwitchAgent);
+      let commandResult: SlashCommandActionReturn | boolean = false;
+      await act(async () => {
+        commandResult = await result.current.handleSlashCommand('/agent researcher');
+      });
+
+      expect(mockSwitchAgent).toHaveBeenCalledWith('researcher', undefined);
+      expect(mockAddItem).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          type: MessageType.INFO,
+          text: 'Switched to agent: researcher',
+        }),
+        expect.any(Number),
+      );
+      expect(commandResult).toBe(true);
+    });
+
+    it('should mark the active agent when activeAgentName is provided', async () => {
+      const mockSwitchAgent = vi.fn();
+      const { result } = getAgentProcessorHook('researcher', mockSwitchAgent);
+      await act(async () => {
+        await result.current.handleSlashCommand('/agent');
+      });
+
+      const message = mockAddItem.mock.calls[1][0].text;
+      expect(message).toContain('Available agents');
+      // The active agent 'researcher' should be marked with the active indicator
+      expect(message).toContain('researcher');
+      expect(message).toContain('(active)');
+    });
+
+    it('should show error when switchAgent is not available', async () => {
+      const { result } = getAgentProcessorHook(undefined, undefined);
+      let commandResult: SlashCommandActionReturn | boolean = false;
+      await act(async () => {
+        commandResult = await result.current.handleSlashCommand('/agent researcher');
+      });
+
+      expect(mockAddItem).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          type: MessageType.ERROR,
+          text: 'Agent switching not available.',
+        }),
+        expect.any(Number),
+      );
+      expect(commandResult).toBe(true);
+    });
+  });
+
+  describe('/clear command with clearConversationHistory', () => {
+    it('should call clearConversationHistory when provided', async () => {
+      const mockClearConversationHistory = vi.fn();
+      const mockResetChat = vi.fn();
+      mockConfig = {
+        ...mockConfig,
+        getGrokClient: () => ({
+          resetChat: mockResetChat,
+        }),
+      } as unknown as Config;
+
+      const settings = {
+        merged: {
+          contextFileName: 'GROKCLI.md',
+        },
+      } as LoadedSettings;
+      const { result } = renderHook(() =>
+        useSlashCommandProcessor(
+          mockConfig,
+          settings,
+          [],
+          mockAddItem,
+          mockClearItems,
+          mockLoadHistory,
+          mockRefreshStatic,
+          mockSetShowHelp,
+          mockOnDebugMessage,
+          mockOpenEditorDialog,
+          mockPerformMemoryRefresh,
+          mockCorgiMode,
+          false,
+          mockSetQuittingMessages,
+          vi.fn(), // openPrivacyNotice
+          vi.fn(), // openProviderDialog
+          mockOpenModelDialog,
+          vi.fn(), // openThemeDialog
+          vi.fn(), // openAuthDialog
+          undefined, // activeAgentName
+          vi.fn(), // switchAgent
+          mockClearConversationHistory,
+        ),
+      );
+
+      let commandResult: SlashCommandActionReturn | boolean = false;
+      await act(async () => {
+        commandResult = await result.current.handleSlashCommand('/clear');
+      });
+
+      expect(mockClearItems).toHaveBeenCalled();
+      expect(mockResetChat).toHaveBeenCalled();
+      expect(mockRefreshStatic).toHaveBeenCalled();
+      expect(mockClearConversationHistory).toHaveBeenCalled();
       expect(commandResult).toBe(true);
     });
   });

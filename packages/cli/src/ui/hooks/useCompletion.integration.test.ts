@@ -14,8 +14,8 @@ import { glob } from 'glob';
 
 // Mock dependencies
 vi.mock('fs/promises');
-vi.mock('@grok-cli/core', async () => {
-  const actual = await vi.importActual('@grok-cli/core');
+vi.mock('../../core/index.js', async () => {
+  const actual = await vi.importActual('../../core/index.js');
   return {
     ...actual,
     FileDiscoveryService: vi.fn(),
@@ -296,7 +296,7 @@ describe('useCompletion git-aware filtering integration', () => {
     expect(fs.readdir).not.toHaveBeenCalled(); // Ensure glob is used instead of readdir
     expect(result.current.suggestions).toEqual([
       { label: 'README.md', value: 'README.md' },
-      { label: 'src/index.js', value: 'src/index.js' },
+      { label: 'src/index.ts', value: 'src/index.ts' },
     ]);
   });
 
@@ -325,7 +325,7 @@ describe('useCompletion git-aware filtering integration', () => {
     expect(result.current.suggestions).toEqual([
       { label: '.env', value: '.env' },
       { label: '.gitignore', value: '.gitignore' },
-      { label: 'src/index.js', value: 'src/index.js' },
+      { label: 'src/index.ts', value: 'src/index.ts' },
     ]);
   });
 });

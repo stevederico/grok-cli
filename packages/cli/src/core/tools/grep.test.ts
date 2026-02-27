@@ -12,6 +12,17 @@ import os from 'os';
 
 // Mock the child_process module to control grep/git grep behavior
 vi.mock('child_process', () => ({
+  default: {
+    spawn: vi.fn(() => ({
+      on: (event: string, cb: (...args: unknown[]) => void) => {
+        if (event === 'error' || event === 'close') {
+          setTimeout(() => cb(1), 0);
+        }
+      },
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+    })),
+  },
   spawn: vi.fn(() => ({
     on: (event: string, cb: (...args: unknown[]) => void) => {
       if (event === 'error' || event === 'close') {

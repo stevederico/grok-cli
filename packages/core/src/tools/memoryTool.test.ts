@@ -20,7 +20,7 @@ import * as os from 'os';
 vi.mock('fs/promises');
 vi.mock('os');
 
-const MEMORY_SECTION_HEADER = '## Grok Added Memories';
+const MEMORY_SECTION_HEADER = '## AI Added Memories';
 
 // Define a type for our fsAdapter to ensure consistency
 interface FsAdapter {

@@ -9,9 +9,8 @@ import { parseAndFormatApiError } from './errorParsing.js';
 import { AuthType, StructuredError } from '../../core/index.js';
 
 describe('parseAndFormatApiError', () => {
-  const enterpriseMessage = 'upgrade to a plan with higher limits';
-  const vertexMessage = 'request a quota increase through Vertex';
-  const grokMessage = 'request a quota increase through AI Studio';
+  const apiKeyMessage = 'Check your xAI API key quota or switch to /auth Ollama (Local)';
+  const defaultMessage = 'Your request has been rate limited';
 
   it('should format a valid API error JSON', () => {
     const errorMessage =
@@ -26,26 +25,26 @@ describe('parseAndFormatApiError', () => {
       'got status: 429 Too Many Requests. {"error":{"code":429,"message":"Rate limit exceeded","status":"RESOURCE_EXHAUSTED"}}';
     const result = parseAndFormatApiError(errorMessage);
     expect(result).toContain('[API Error: Rate limit exceeded');
-    expect(result).toContain('Your request has been rate limited');
+    expect(result).toContain(defaultMessage);
   });
 
-  it('should format a 429 API error with the personal message', () => {
+  it('should format a 429 API error with the API key message', () => {
     const errorMessage =
       'got status: 429 Too Many Requests. {"error":{"code":429,"message":"Rate limit exceeded","status":"RESOURCE_EXHAUSTED"}}';
     const result = parseAndFormatApiError(
       errorMessage,
-      AuthType.LOGIN_WITH_PROVIDER,
+      AuthType.API_KEY,
     );
     expect(result).toContain('[API Error: Rate limit exceeded');
-    expect(result).toContain(enterpriseMessage);
+    expect(result).toContain(apiKeyMessage);
   });
 
-  it('should format a 429 API error with the vertex message', () => {
+  it('should format a 429 API error with the default message for LOCAL auth', () => {
     const errorMessage =
       'got status: 429 Too Many Requests. {"error":{"code":429,"message":"Rate limit exceeded","status":"RESOURCE_EXHAUSTED"}}';
-    const result = parseAndFormatApiError(errorMessage, AuthType.USE_VERTEX_AI);
+    const result = parseAndFormatApiError(errorMessage, AuthType.LOCAL);
     expect(result).toContain('[API Error: Rate limit exceeded');
-    expect(result).toContain(vertexMessage);
+    expect(result).toContain(defaultMessage);
   });
 
   it('should return the original message if it is not a JSON error', () => {
@@ -87,9 +86,9 @@ describe('parseAndFormatApiError', () => {
       },
     });
 
-    const result = parseAndFormatApiError(errorMessage, AuthType.USE_GROK);
+    const result = parseAndFormatApiError(errorMessage, AuthType.API_KEY);
     expect(result).toContain('Grok 2.5 Pro Preview');
-    expect(result).toContain(grokMessage);
+    expect(result).toContain(apiKeyMessage);
   });
 
   it('should format a StructuredError', () => {
@@ -101,14 +100,14 @@ describe('parseAndFormatApiError', () => {
     expect(parseAndFormatApiError(error)).toBe(expected);
   });
 
-  it('should format a 429 StructuredError with the vertex message', () => {
+  it('should format a 429 StructuredError with the default message', () => {
     const error: StructuredError = {
       message: 'Rate limit exceeded',
       status: 429,
     };
-    const result = parseAndFormatApiError(error, AuthType.USE_VERTEX_AI);
+    const result = parseAndFormatApiError(error);
     expect(result).toContain('[API Error: Rate limit exceeded]');
-    expect(result).toContain(vertexMessage);
+    expect(result).toContain(defaultMessage);
   });
 
   it('should handle an unknown error type', () => {

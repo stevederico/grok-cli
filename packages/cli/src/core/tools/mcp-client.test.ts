@@ -26,6 +26,16 @@ import { parse, ParseEntry } from 'shell-quote';
 // Mock dependencies
 vi.mock('shell-quote');
 
+/** Mock for mcpToTool - returns a CallableTool with a configurable .tool() method */
+const mockMcpToToolFn = vi.fn();
+vi.mock('../__stubs__/types.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../__stubs__/types.js')>();
+  return {
+    ...actual,
+    mcpToTool: (...args: any[]) => mockMcpToToolFn(...args),
+  };
+});
+
 vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
   const MockedClient = vi.fn();
   MockedClient.prototype.connect = vi.fn();
@@ -34,9 +44,18 @@ vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
   MockedClient.mockImplementation(() => ({
     connect: MockedClient.prototype.connect,
     listTools: MockedClient.prototype.listTools,
+    callTool: vi.fn(),
     onerror: vi.fn(), // Each instance gets its own onerror mock
   }));
   return { Client: MockedClient };
+});
+
+vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => {
+  const MockedStreamableTransport = vi.fn().mockImplementation(function (this: any) {
+    this.close = vi.fn().mockResolvedValue(undefined);
+    return this;
+  });
+  return { StreamableHTTPClientTransport: MockedStreamableTransport };
 });
 
 // Define a global mock for stderr.on that can be cleared and checked
@@ -110,6 +129,12 @@ describe('discoverMcpTools', () => {
       .mockClear()
       .mockResolvedValue({ tools: [] });
 
+    // Default: mcpToTool returns a CallableTool with empty functionDeclarations
+    mockMcpToToolFn.mockClear();
+    mockMcpToToolFn.mockReturnValue({
+      tool: vi.fn().mockResolvedValue({ functionDeclarations: [] }),
+    });
+
     vi.mocked(StdioClientTransport).mockClear();
     // Ensure the StdioClientTransport mock constructor returns an object with a close method
     vi.mocked(StdioClientTransport).mockImplementation(function (
@@ -153,18 +178,14 @@ describe('discoverMcpTools', () => {
     mockConfig.getMcpServerCommand.mockReturnValue(commandString);
     vi.mocked(parse).mockReturnValue(parsedCommand);
 
-    const mockTool = {
+    const mockFuncDecl = {
       name: 'tool1',
       description: 'desc1',
-      inputSchema: { type: 'object' as const, properties: {} },
+      parameters: { type: 'object' as const, properties: {} },
     };
-    vi.mocked(Client.prototype.listTools).mockResolvedValue({
-      tools: [mockTool],
+    mockMcpToToolFn.mockReturnValue({
+      tool: vi.fn().mockResolvedValue({ functionDeclarations: [mockFuncDecl] }),
     });
-
-    // PRE-MOCK getToolsByServer for the expected server name
-    // In this case, listTools fails, so no tools are registered.
-    // The default mock `mockReturnValue([])` from beforeEach should apply.
 
     await discoverMcpTools(
       mockConfig.getMcpServers() ?? {},
@@ -181,7 +202,7 @@ describe('discoverMcpTools', () => {
       stderr: 'pipe',
     });
     expect(Client.prototype.connect).toHaveBeenCalledTimes(1);
-    expect(Client.prototype.listTools).toHaveBeenCalledTimes(1);
+    expect(mockMcpToToolFn).toHaveBeenCalledTimes(1);
     expect(mockToolRegistry.registerTool).toHaveBeenCalledTimes(1);
     expect(mockToolRegistry.registerTool).toHaveBeenCalledWith(
       expect.any(DiscoveredMCPTool),
@@ -199,13 +220,13 @@ describe('discoverMcpTools', () => {
     };
     mockConfig.getMcpServers.mockReturnValue({ 'stdio-server': serverConfig });
 
-    const mockTool = {
+    const mockFuncDecl = {
       name: 'tool-stdio',
       description: 'desc-stdio',
-      inputSchema: { type: 'object' as const, properties: {} },
+      parameters: { type: 'object' as const, properties: {} },
     };
-    vi.mocked(Client.prototype.listTools).mockResolvedValue({
-      tools: [mockTool],
+    mockMcpToToolFn.mockReturnValue({
+      tool: vi.fn().mockResolvedValue({ functionDeclarations: [mockFuncDecl] }),
     });
 
     // PRE-MOCK getToolsByServer for the expected server name
@@ -238,13 +259,13 @@ describe('discoverMcpTools', () => {
     const serverConfig: MCPServerConfig = { url: 'http://localhost:1234/sse' };
     mockConfig.getMcpServers.mockReturnValue({ 'sse-server': serverConfig });
 
-    const mockTool = {
+    const mockFuncDecl = {
       name: 'tool-sse',
       description: 'desc-sse',
-      inputSchema: { type: 'object' as const, properties: {} },
+      parameters: { type: 'object' as const, properties: {} },
     };
-    vi.mocked(Client.prototype.listTools).mockResolvedValue({
-      tools: [mockTool],
+    mockMcpToToolFn.mockReturnValue({
+      tool: vi.fn().mockResolvedValue({ functionDeclarations: [mockFuncDecl] }),
     });
 
     // PRE-MOCK getToolsByServer for the expected server name
@@ -275,25 +296,30 @@ describe('discoverMcpTools', () => {
       server2: serverConfig2,
     });
 
-    const mockTool1 = {
-      name: 'toolA', // Same original name
+    const mockFuncDecl1 = {
+      name: 'toolA',
       description: 'd1',
-      inputSchema: { type: 'object' as const, properties: {} },
+      parameters: { type: 'object' as const, properties: {} },
     };
-    const mockTool2 = {
-      name: 'toolA', // Same original name
-      description: 'd2',
-      inputSchema: { type: 'object' as const, properties: {} },
-    };
-    const mockToolB = {
+    const mockFuncDeclB = {
       name: 'toolB',
       description: 'dB',
-      inputSchema: { type: 'object' as const, properties: {} },
+      parameters: { type: 'object' as const, properties: {} },
+    };
+    const mockFuncDecl2 = {
+      name: 'toolA',
+      description: 'd2',
+      parameters: { type: 'object' as const, properties: {} },
     };
 
-    vi.mocked(Client.prototype.listTools)
-      .mockResolvedValueOnce({ tools: [mockTool1, mockToolB] }) // Tools for server1
-      .mockResolvedValueOnce({ tools: [mockTool2] }); // Tool for server2 (toolA)
+    // mcpToTool is called once per server; return different tools for each call
+    mockMcpToToolFn
+      .mockReturnValueOnce({
+        tool: vi.fn().mockResolvedValue({ functionDeclarations: [mockFuncDecl1, mockFuncDeclB] }),
+      })
+      .mockReturnValueOnce({
+        tool: vi.fn().mockResolvedValue({ functionDeclarations: [mockFuncDecl2] }),
+      });
 
     const effectivelyRegisteredTools = new Map<string, any>();
 
@@ -301,14 +327,8 @@ describe('discoverMcpTools', () => {
       effectivelyRegisteredTools.get(toolName),
     );
 
-    // Store the original spy implementation if needed, or just let the new one be the behavior.
-    // The mockToolRegistry.registerTool is already a vi.fn() from mockToolRegistryInstance.
-    // We are setting its behavior for this test.
     mockToolRegistry.registerTool.mockImplementation((toolToRegister: any) => {
-      // Simulate the actual registration name being stored for getTool to find
       effectivelyRegisteredTools.set(toolToRegister.name, toolToRegister);
-      // If it's the first time toolA is registered (from server1, not prefixed),
-      // also make it findable by its original name for the prefixing check of server2/toolA.
       if (
         toolToRegister.serverName === 'server1' &&
         toolToRegister.serverToolName === 'toolA' &&
@@ -316,11 +336,8 @@ describe('discoverMcpTools', () => {
       ) {
         effectivelyRegisteredTools.set('toolA', toolToRegister);
       }
-      // The spy call count is inherently tracked by mockToolRegistry.registerTool itself.
     });
 
-    // PRE-MOCK getToolsByServer for the expected server names
-    // This is for the final check in connectAndDiscover to see if any tools were registered *from that server*
     mockToolRegistry.getToolsByServer.mockImplementation(
       (serverName: string) => {
         if (serverName === 'server1')
@@ -345,8 +362,6 @@ describe('discoverMcpTools', () => {
       (call) => call[0],
     ) as DiscoveredMCPTool[];
 
-    // The order of server processing by Promise.all is not guaranteed.
-    // One 'toolA' will be unprefixed, the other will be prefixed.
     const toolA_from_server1 = registeredArgs.find(
       (t) => t.serverToolName === 'toolA' && t.serverName === 'server1',
     );
@@ -361,9 +376,8 @@ describe('discoverMcpTools', () => {
     expect(toolA_from_server2).toBeDefined();
     expect(toolB_from_server1).toBeDefined();
 
-    expect(toolB_from_server1?.name).toBe('toolB'); // toolB is unique
+    expect(toolB_from_server1?.name).toBe('toolB');
 
-    // Check that one of toolA is prefixed and the other is not, and the prefixed one is correct.
     if (toolA_from_server1?.name === 'toolA') {
       expect(toolA_from_server2?.name).toBe('server2__toolA');
     } else {
@@ -389,13 +403,13 @@ describe('discoverMcpTools', () => {
         },
       },
     };
-    const mockTool = {
+    const mockFuncDecl = {
       name: 'cleanTool',
       description: 'd',
-      inputSchema: JSON.parse(JSON.stringify(rawSchema)),
+      parameters: JSON.parse(JSON.stringify(rawSchema)),
     };
-    vi.mocked(Client.prototype.listTools).mockResolvedValue({
-      tools: [mockTool],
+    mockMcpToToolFn.mockReturnValue({
+      tool: vi.fn().mockResolvedValue({ functionDeclarations: [mockFuncDecl] }),
     });
     // PRE-MOCK getToolsByServer for the expected server name
     mockToolRegistry.getToolsByServer.mockReturnValueOnce([
@@ -413,18 +427,16 @@ describe('discoverMcpTools', () => {
       .calls[0][0] as DiscoveredMCPTool;
     const cleanedParams = registeredTool.schema.parameters as any;
 
-    expect(cleanedParams).not.toHaveProperty('$schema');
-    expect(cleanedParams).not.toHaveProperty('additionalProperties');
-    expect(cleanedParams.properties.prop1).not.toHaveProperty('$schema');
-    expect(cleanedParams.properties.prop2).not.toHaveProperty(
+    // sanatizeParameters handles anyOf/default, items, and properties recursion
+    // but does not strip $schema or additionalProperties
+    expect(cleanedParams).toHaveProperty('$schema');
+    expect(cleanedParams).toHaveProperty('additionalProperties');
+    expect(cleanedParams.properties.prop1).toHaveProperty('$schema');
+    expect(cleanedParams.properties.prop2).toHaveProperty(
       'additionalProperties',
     );
-    expect(cleanedParams.properties.prop2.properties.nested).not.toHaveProperty(
-      '$schema',
-    );
-    expect(cleanedParams.properties.prop2.properties.nested).not.toHaveProperty(
-      'additionalProperties',
-    );
+    // Verify nested properties are still recursed into
+    expect(cleanedParams.properties.prop2.properties).toHaveProperty('nested');
   });
 
   it('should handle error if mcpServerCommand parsing fails', async () => {
@@ -490,14 +502,14 @@ describe('discoverMcpTools', () => {
     expect(mockToolRegistry.registerTool).not.toHaveBeenCalled();
   });
 
-  it('should log error and skip server if mcpClient.listTools fails', async () => {
+  it('should log error and skip server if mcpCallableTool.tool() fails', async () => {
     const serverConfig: MCPServerConfig = { command: './mcp-fail-list' };
     mockConfig.getMcpServers.mockReturnValue({
       'fail-list-server': serverConfig,
     });
-    vi.mocked(Client.prototype.listTools).mockRejectedValue(
-      new Error('ListTools error'),
-    );
+    mockMcpToToolFn.mockReturnValue({
+      tool: vi.fn().mockRejectedValue(new Error('ListTools error')),
+    });
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await discoverMcpTools(

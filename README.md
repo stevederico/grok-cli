@@ -2,18 +2,22 @@
 
 # @stevederico/grok-cli
 
-Grok CLI is an open-source interactive CLI tool that provides a flexible and powerful interface for AI-assisted workflows.
+Grok CLI is the open-source terminal agent for Grok and other LLMs. It gives you a fast, beautiful, tool-using coding assistant that runs directly in your shell.
 
-**Supported Providers:**
-- **XAI (Grok)** - Cloud-based Grok models via xAI API
-- **Ollama** - Local LLM inference with any Ollama model
-- **Custom** - Any OpenAI-compatible endpoint
-- **Anthropic** - Claude models via Anthropic API
-- **Google Gemini** - Gemini models via Google AI API
-- **OpenRouter** - Multi-model routing service
-- **Groq** - Fast open-source model inference
-- **Azure OpenAI** - OpenAI models via Azure
-- **GitHub Models** - Models via GitHub inference API
+**Key Features**
+- Full agentic tool use (read, write, edit, grep, shell, web search) with user approval
+- Polished React/Ink terminal UI with themes and syntax highlighting
+- MCP server support and extensible hook system
+- macOS sandbox for safe shell execution
+- Works great with Grok, Claude, GPT, Gemini, local Ollama, and more
+
+**Supported Providers**
+- **Grok (xAI)** — Best-in-class reasoning and coding models via xAI
+- **Ollama** — Local models (llama, qwen, deepseek, etc.)
+- **Anthropic** — Claude models
+- **OpenAI** — GPT models
+- **Google** — Gemini models
+- **Groq**, **OpenRouter**, **Azure**, **GitHub Models**, and any OpenAI-compatible endpoint (including custom)
 
 
 ## Quick Start
@@ -26,19 +30,25 @@ npm i -g @stevederico/grok-cli
 
 ### Setup API Key
 
-The fastest way to get started is the built-in setup dialog:
-
-```bash
-grok
-# Type /auth and press Enter
-# Select a provider → enter your API key
-# Key is saved to ~/.grok-cli/.env and loaded immediately
-```
-
-You can also set keys via environment variables:
+The fastest way to get started with Grok:
 
 ```bash
 export XAI_API_KEY="your_xai_api_key"
+grok
+```
+
+Or use the built-in setup:
+
+```bash
+grok
+# Type /auth → select Grok (xAI) → paste your key
+# Key is saved to ~/.grok-cli/.env
+```
+
+You can also use the `grok` provider alias:
+
+```bash
+export GROKCLI_PROVIDER=grok
 grok
 ```
 
@@ -91,7 +101,7 @@ grok
 
 When `GROKCLI_PROVIDER` is not set, Grok CLI auto-detects based on available API keys in this priority order:
 
-`xai` > `openai` > `anthropic` > `google` > `openrouter` > `groq` > `azure` > `github` > `custom` > `ollama`
+`xai` (or `grok`) > `openai` > `anthropic` > `google` > `openrouter` > `groq` > `azure` > `github` > `custom` > `ollama`
 
 ## Examples
 
@@ -99,32 +109,34 @@ Once the CLI is running, you can start interacting with AI models from your shel
 
 ### Interactive Mode
 
-Start a project from a new directory:
+Start coding with Grok in any directory:
 
 ```sh
-cd new-project
+cd my-project
 export XAI_API_KEY="your_key"
 grok
-> Write me a Discord bot that answers questions using a FAQ.md file I will provide
+> Build a CLI tool that fetches GitHub stars and outputs a markdown table
+> Refactor the auth module to use better error handling
+> Review the last 5 commits for potential bugs
 ```
 
-Work with an existing project using Ollama:
+Work with an existing project using local models (Ollama):
 
 ```sh
 git clone https://github.com/stevederico/skateboard
 cd skateboard
 export GROKCLI_PROVIDER=ollama
 grok
-> Give me a summary of all of the changes that went in yesterday
+> Summarize the changes from the last 3 commits
 ```
 
 ### Non-Interactive Mode
 
-Ask a quick question with XAI:
+Ask a quick question with Grok:
 
 ```sh
 export XAI_API_KEY="your_key"
-grok -p "Explain what this code does" < main.js
+grok -p "Review this file for security issues and suggest improvements" < main.js
 ```
 
 Use Anthropic for code review:
@@ -134,18 +146,13 @@ export ANTHROPIC_API_KEY="your_key"
 echo "Review this for bugs" | grok -p "analyze the code"
 ```
 
-### Next steps
+### Documentation & Help
 
-- [Contribute or build from source](./CONTRIBUTING.md)
 - [CLI Commands](./docs/cli/commands.md)
-- [Troubleshooting guide](./docs/troubleshooting.md)
-- [Full documentation](./docs/index.md)
 - [Popular tasks](./docs/popular-tasks.md)
-
-### Troubleshooting
-
-Head over to the [troubleshooting](docs/troubleshooting.md) guide if you're
-having issues.
+- [Full documentation](./docs/index.md)
+- [Troubleshooting guide](./docs/troubleshooting.md)
+- [Contribute](./CONTRIBUTING.md) (build from source, run tests, etc.)
 
 ## License
 

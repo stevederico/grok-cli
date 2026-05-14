@@ -469,13 +469,13 @@ export const useProviderStream = (
         // Get provider configuration
         const providerName = config.getProvider() ||
           process.env.GROKCLI_PROVIDER ||
-          (process.env.XAI_API_KEY ? 'grok' : 'ollama');
+          (process.env.XAI_API_KEY ? 'xai' : 'ollama');
         const model = config.getModel();
 
         console.debug(`[DEBUG] Interactive UI - Provider: ${providerName}, Model: ${model}`);
 
         const providerConfig: any = {};
-        if (providerName === 'xai') {
+        if (providerName === 'xai' || providerName === 'grok') {
           providerConfig.apiKey = process.env.XAI_API_KEY || '';
           providerConfig.contextSize = parseInt(process.env.GROKCLI_CONTEXT_SIZE || '128000', 10);
         } else if (providerName === 'ollama') {

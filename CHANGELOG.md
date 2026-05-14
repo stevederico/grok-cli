@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.0] - 2026-04-10
+
+  Add grok provider alias
+  Fix xai interactive fallback bug
+  Update default model to grok-4
+  Clean debug logs from core provider
+  Improve provider dialog branding
+  Wire version sync into publish flow
+
 ## [0.3.9] - 2026-02-26
 
   Add vitest workspace config

@@ -1,6 +1,6 @@
 {
   "name": "@stevederico/grok-cli",
-  "version": "0.3.9",
+  "version": "0.4.0",
   "description": "Grok CLI - Universal LLM CLI",
   "keywords": ["cli", "ai", "grok", "llm", "xai", "ollama", "interactive"],
   "homepage": "https://github.com/stevederico/grok-cli#readme",
@@ -42,6 +42,7 @@
     "preflight": "npm run clean && npm ci && npm run format && npm run lint:ci && npm run build && npm run typecheck && npm run test:ci",
     "publish": "npm run bundle && npm publish",
     "prerelease:dev": "npm run prerelease:version --workspaces && npm run prerelease:deps --workspaces",
+    "version": "npm run prerelease:dev",
     "bundle": "npm run generate && node esbuild.config.js && node scripts/copy_bundle_assets.js",
     "build:cli": "npm run build --workspace packages/cli",
     "build:core": "npm run build --workspace packages/core",
@@ -49,7 +50,7 @@
     "prepare:cli-packagejson": "node scripts/prepare-cli-packagejson.js",
     "prepare:packages": "node scripts/prepare-cli-packagejson.js && node scripts/prepare-core-package.js",
     "publish:npm": "npm publish --workspaces ${NPM_PUBLISH_TAG:+--tag=$NPM_PUBLISH_TAG} ${NPM_DRY_RUN:+--dry-run}",
-    "publish:release": "npm run build:packages && npm run prepare:cli-packagejson && npm run publish:npm",
+    "publish:release": "npm run prerelease:dev && npm run build:packages && npm run prepare:cli-packagejson && npm run publish:npm",
     "prepublishOnly": "node scripts/prepublish.js"
   },
   "bin": {

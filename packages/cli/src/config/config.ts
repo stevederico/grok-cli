@@ -59,8 +59,8 @@ async function parseArguments(): Promise<CliArgs> {
   // Set provider-specific default models
   if (provider === 'ollama') {
     defaultModel = process.env.GROKCLI_OLLAMA_MODEL || 'llama3.2:latest';
-  } else if (provider === 'xai') {
-    defaultModel = process.env.XAI_MODEL || 'grok-code-fast-1';
+  } else if (provider === 'xai' || provider === 'grok') {
+    defaultModel = process.env.XAI_MODEL || 'grok-4';
   }
 
   const argv = await yargs(hideBin(process.argv))

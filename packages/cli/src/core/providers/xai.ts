@@ -5,7 +5,7 @@ export class XAIProvider extends OpenAICompatibleProvider {
   constructor(config: ProviderConfig = {}) {
     super('xai', config, {
       apiKey: process.env.XAI_API_KEY,
-      model: process.env.XAI_MODEL || 'grok-code-fast-1',
+      model: process.env.XAI_MODEL || 'grok-4',
       endpoint: process.env.XAI_BASE_URL || 'https://api.x.ai/v1',
       displayName: 'XAI',
     });

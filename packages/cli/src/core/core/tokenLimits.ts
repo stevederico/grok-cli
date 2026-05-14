@@ -11,13 +11,12 @@ export const DEFAULT_TOKEN_LIMIT = 128000;
 
 export function tokenLimit(model: Model): TokenCount {
   // Add other models as they become relevant or if specified by config
-  // XAI/Grok models
+  // XAI/Grok models — most current Grok models use 128k–1M+ context
   switch (model) {
-    case 'grok-code-fast-1':
-    case 'grok-4-0709':
     case 'grok-4':
-    case 'grok-3-mini':
+    case 'grok-4-0709':
     case 'grok-3':
+    case 'grok-3-mini':
     default:
       return DEFAULT_TOKEN_LIMIT;
   }

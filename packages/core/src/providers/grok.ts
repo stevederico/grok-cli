@@ -8,7 +8,7 @@ export class GrokProvider extends Provider {
   constructor(config: ProviderConfig = {}) {
     super('grok', config);
     this.apiKey = config.apiKey || process.env.XAI_API_KEY;
-    this.model = config.model || process.env.XAI_MODEL || 'grok-code-fast-1';
+    this.model = config.model || process.env.XAI_MODEL || 'grok-4';
     this.endpoint = config.endpoint || 'https://api.x.ai/v1';
   }
 
@@ -54,13 +54,7 @@ export class GrokProvider extends Provider {
       };
       
       const fullEndpoint = `${this.endpoint}/chat/completions`;
-      
-      console.log(`🚀 Grok - Making request to: ${fullEndpoint}`);
-      console.log(`📦 Grok - Using model: ${model}`);
-      console.log(`🔑 Grok - API key configured: ${this.apiKey ? 'YES' : 'NO'}`);
-      console.log(`🌡️  Grok - Temperature: ${temperature}`);
-      console.debug(`[DEBUG] Grok - Full request body:`, JSON.stringify(requestBody, null, 2));
-      
+
       const response = await fetch(fullEndpoint, {
         method: 'POST',
         headers: {
@@ -70,19 +64,12 @@ export class GrokProvider extends Provider {
         body: JSON.stringify(requestBody)
       });
 
-      console.log(`📡 Grok - Response status: ${response.status} ${response.statusText}`);
-      console.log(`📍 Grok - Response URL: ${response.url}`);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`❌ Grok - Error response body:`, errorText);
-        console.error(`❌ Grok - Response headers:`, Object.fromEntries(response.headers.entries()));
         throw new Error(`Grok API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log(`✅ Grok - Success! Response received`);
-      console.debug(`[DEBUG] Grok - Full response:`, JSON.stringify(data, null, 2));
       
       if (data.choices && data.choices[0] && data.choices[0].message) {
         return data.choices[0].message.content;
@@ -90,7 +77,6 @@ export class GrokProvider extends Provider {
       
       throw new Error('Unexpected response format from Grok API');
     } catch (error) {
-      console.error(`💥 Grok - Query failed with error:`, error);
       throw new Error(`Grok query failed: ${(error as Error).message}`);
     }
   }

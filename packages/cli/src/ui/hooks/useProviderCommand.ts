@@ -15,7 +15,8 @@ interface UseProviderCommandReturn {
 }
 
 const DEFAULT_MODELS: Record<string, () => string> = {
-  xai: () => process.env.XAI_MODEL || 'grok-code-fast-1',
+  xai: () => process.env.XAI_MODEL || 'grok-4',
+  grok: () => process.env.XAI_MODEL || 'grok-4',
   openai: () => process.env.OPENAI_MODEL || 'gpt-4o',
   anthropic: () => process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
   google: () => process.env.GEMINI_MODEL || 'gemini-2.5-flash',

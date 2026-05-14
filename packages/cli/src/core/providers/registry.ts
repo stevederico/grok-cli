@@ -20,6 +20,7 @@ const providers = new Map<string, ProviderFactory>();
 
 // Register built-in providers
 providers.set('xai', createXAIProvider);
+providers.set('grok', createXAIProvider); // alias for branding
 providers.set('openai', createOpenAIProvider);
 providers.set('anthropic', createAnthropicProvider);
 providers.set('google', createGoogleProvider);
@@ -68,6 +69,7 @@ export function hasProvider(name: string): boolean {
  */
 export const PROVIDER_ENV_VAR_MAP: Record<string, string> = {
   xai: 'XAI_API_KEY',
+  grok: 'XAI_API_KEY',
   openai: 'OPENAI_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
   google: 'GEMINI_API_KEY',

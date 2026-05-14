@@ -69,9 +69,9 @@ grok
 
 | Provider | Environment Variable | Description |
 |----------|---------------------|-------------|
-| **General** | `GROKCLI_PROVIDER` | Choose provider: `xai`, `openai`, `anthropic`, `google`, `openrouter`, `groq`, `azure`, `github`, `ollama`, `custom` |
+| **General** | `GROKCLI_PROVIDER` | Choose provider: `xai` (or `grok`), `openai`, `anthropic`, `google`, `openrouter`, `groq`, `azure`, `github`, `ollama`, `custom` |
 | **XAI (Grok)** | `XAI_API_KEY` | API key for xAI Grok models |
-| **XAI (Grok)** | `XAI_MODEL` | Specific Grok model to use (default: `grok-4-0709`) |
+| **XAI (Grok)** | `XAI_MODEL` | Specific Grok model to use (default: `grok-4`) |
 | **OpenAI** | `OPENAI_API_KEY` | API key for OpenAI models |
 | **Anthropic** | `ANTHROPIC_API_KEY` | API key for Anthropic Claude models |
 | **Google** | `GEMINI_API_KEY` | API key for Google Gemini models |

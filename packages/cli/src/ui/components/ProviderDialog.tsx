@@ -24,6 +24,12 @@ interface ProviderItem {
   issues?: string[];
 }
 
+// Friendly display names for providers (especially for Grok branding)
+const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
+  xai: 'Grok (xAI)',
+  grok: 'Grok (xAI)',
+};
+
 export function ProviderDialog({
   onSelect,
   currentProvider,
@@ -41,15 +47,17 @@ export function ProviderDialog({
         try {
           const validation = await validateProvider(providerName);
           const healthStatus = validation.healthy ? '✅' : '⚠️';
+          const displayName = PROVIDER_DISPLAY_NAMES[providerName] || providerName;
           providerItems.push({
-            label: `${providerName} ${healthStatus}${providerName === currentProvider ? ' (current)' : ''}`,
+            label: `${displayName} ${healthStatus}${providerName === currentProvider ? ' (current)' : ''}`,
             value: providerName,
             healthStatus,
             issues: validation.issues,
           });
         } catch (error) {
+          const displayName = PROVIDER_DISPLAY_NAMES[providerName] || providerName;
           providerItems.push({
-            label: `${providerName} ❌${providerName === currentProvider ? ' (current)' : ''}`,
+            label: `${displayName} ❌${providerName === currentProvider ? ' (current)' : ''}`,
             value: providerName,
             healthStatus: '❌',
             issues: [error instanceof Error ? error.message : String(error)],

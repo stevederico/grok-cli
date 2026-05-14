@@ -24,6 +24,8 @@ import { WebFetchTool } from '../tools/web-fetch.js';
 import { WebSearchTool } from '../tools/web-search.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
 import { MemoryTool, setContextMdFilename } from '../tools/memoryTool.js';
+import { AskUserTool } from '../tools/ask-user.js';
+import { PatchTool } from '../tools/patch.js';
 import { GrokClient } from '../core/types.js';
 import { GROKCLI_CONFIG_DIR as GROKCLI_DIR } from '../tools/memoryTool.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
@@ -490,6 +492,8 @@ export function createToolRegistry(config: Config): Promise<ToolRegistry> {
   registerCoreTool(ReadManyFilesTool, targetDir, config);
   registerCoreTool(ShellTool, config);
   registerCoreTool(MemoryTool);
+  registerCoreTool(AskUserTool);
+  registerCoreTool(PatchTool, config);
   return (async () => {
     await registry.discoverTools();
     return registry;

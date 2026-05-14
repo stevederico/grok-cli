@@ -36,6 +36,11 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./core": "./dist/src/core/index.js",
+    "./core/*": "./dist/src/core/*.js"
+  },
   "config": {},
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.0",

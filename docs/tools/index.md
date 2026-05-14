@@ -6,7 +6,7 @@ Grok CLI includes built-in tools that the AI models use to interact with your lo
 
 In the context of Grok CLI, tools are specific functions or modules that the AI models can request to be executed. For example, if you ask the AI to "Summarize the contents of `my_document.txt`," the model will likely identify the need to read that file and will request the execution of the `read_file` tool.
 
-The core component (`packages/core`) manages these tools, presents their definitions (schemas) to the AI models, executes them when requested, and returns the results to the model for further processing into a user-facing response.
+The engine (inside `@stevederico/grok-cli`) manages these tools, presents their definitions to the model, executes approved tools, and feeds results back to the LLM.
 
 These tools provide the following capabilities:
 

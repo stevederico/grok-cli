@@ -4,7 +4,7 @@ This documentation provides a comprehensive guide to installing, using, and deve
 
 ## Overview
 
-Grok CLI brings the capabilities of various LLM models to your terminal in an interactive Read-Eval-Print Loop (REPL) environment. Grok CLI consists of a client-side application (`packages/cli`) that communicates with a local server (`packages/core`), which in turn manages requests to various LLM APIs and their AI models. Grok CLI also contains a variety of tools for tasks such as performing file system operations, running shells, and web fetching, which are managed by `packages/core`.
+Grok CLI brings powerful LLM agents (especially Grok) directly into your terminal. It is a single package (`@stevederico/grok-cli`) containing both a rich React/Ink TUI and a reusable engine that can also be used programmatically via `@stevederico/grok-cli/core`.
 
 ## Navigating the documentation
 
@@ -12,15 +12,14 @@ This documentation is organized into the following sections:
 
 - **[Execution and Deployment](./deployment.md):** Information for running Grok CLI.
 - **[Architecture Overview](./architecture.md):** Understand the high-level design of Grok CLI, including its components and how they interact.
-- **CLI Usage:** Documentation for `packages/cli`.
+- **CLI Usage:** Documentation for the terminal interface.
   - **[CLI Introduction](./cli/index.md):** Overview of the command-line interface.
   - **[Commands](./cli/commands.md):** Description of available CLI commands.
   - **[Popular Tasks](./popular-tasks.md):** A guide to performing popular tasks with Grok CLI.
   - **[Checkpointing](./checkpointing.md):** Documentation for the checkpointing feature.
   - **[Extensions](./extension.md):** How to extend the CLI with new functionality.
-- **Core Details:** Documentation for `packages/core`.
-  - **[Core Introduction](./core/index.md):** Overview of the core component.
-  - **[Tools API](./core/tools-api.md):** Information on how the core manages and exposes tools.
+- **Programmatic Usage:**
+  - The core engine is available via `@stevederico/grok-cli/core` (see [Architecture](./architecture.md)).
 - **Tools:**
   - **[Tools Overview](./tools/index.md):** Overview of the available tools.
   - **[File System Tools](./tools/file-system.md):** Documentation for the `read_file` and `write_file` tools.

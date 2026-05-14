@@ -86,18 +86,18 @@ The execution methods described above are made possible by the following archite
 
 **NPM packages**
 
-Grok CLI project is a monorepo that publishes two core packages to the NPM registry:
+Grok CLI is published as a single package: `@stevederico/grok-cli`.
 
-- `grok-cli-core`: The backend, handling logic and tool execution.
-- `grok-cli`: The user-facing frontend.
+The core engine logic is included in the same package and is importable via the `/core` subpath:
 
-These packages are used when performing the standard installation and when running Grok CLI from the source.
+```ts
+import { runQuery, getProvider } from '@stevederico/grok-cli/core';
+```
 
 **Build and packaging processes**
 
-There are two distinct build processes used, depending on the distribution channel:
-
-- **NPM publication:** For publishing to the NPM registry, the TypeScript source code in `grok-cli-core` and `grok-cli` is transpiled into standard JavaScript using the TypeScript Compiler (`tsc`). The resulting `dist/` directory is what gets published in the NPM package. This is a standard approach for TypeScript libraries.
+- **NPM publication:** TypeScript is compiled with `tsc` into `dist/`. The package also exposes an `exports` map so the engine can be imported separately from the TUI.
+- **GitHub `npx` execution:** Uses esbuild to create a single bundled executable on the fly.
 
 - **GitHub `npx` execution:** When running the latest version of Grok CLI directly from GitHub, a different process is triggered by the `prepare` script in `package.json`. This script uses `esbuild` to bundle the entire application and its dependencies into a single, self-contained JavaScript file. This bundle is created on-the-fly on the user's machine and is not checked into the repository.
 

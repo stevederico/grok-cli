@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0] - 2026-05-14
+
+  Remove separate grok-cli-core package
+  Merge engine into single @stevederico/grok-cli package
+  Expose core via @stevederico/grok-cli/core import
+  Add ask-user, patch, todo, and lsp tools
+  Simplify build and publish configuration
+
 ## [0.4.0] - 2026-04-10
 
   Add grok provider alias

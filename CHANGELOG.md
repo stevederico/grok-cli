@@ -2,6 +2,8 @@
 
 ## [0.5.0] - 2026-05-14
 
+  Sync package version
+  Format keywords array
   Remove separate grok-cli-core package
   Merge engine into single @stevederico/grok-cli package
   Expose core via @stevederico/grok-cli/core import
